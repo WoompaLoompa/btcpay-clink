@@ -1,0 +1,17 @@
+@using BTCPayServer.Abstractions.Extensions
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using BTCPayServer.Plugins.Clink.Controllers
+@inject BTCPayServer.Abstractions.Contracts.IScopeProvider ScopeProvider
+@{
+    var storeId = ScopeProvider.GetCurrentStoreId();
+}
+
+<li class="nav-item">
+    <a class="nav-link @Url.IsActivePath($"/plugins/{storeId}/clink/configure")" 
+       asp-controller="Clink" 
+       asp-action="Configure" 
+       asp-route-storeId="@storeId">
+        <i class="fa fa-bolt"></i>
+        <span>CLINK Lightning</span>
+    </a>
+</li>

@@ -1,0 +1,152 @@
+.clink-container {
+  max-width: 400px;
+  margin: 1.5rem auto;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.clink-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.clink-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.clink-bolt-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.clink-loader {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.clink-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #f7931a;
+  border-radius: 50%;
+  animation: clink-spin 0.8s linear infinite;
+}
+
+.clink-spinner-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes clink-spin {
+  to { transform: rotate(360deg); }
+}
+
+.clink-qr {
+  margin: 1rem 0;
+}
+
+.clink-qr-img {
+  width: 250px;
+  height: 250px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.clink-amount {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f7931a;
+  margin-bottom: 1rem;
+}
+
+.clink-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.clink-btn {
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.15s ease;
+}
+
+.clink-btn-primary {
+  background: #f7931a;
+  color: #fff;
+  border-color: #f7931a;
+}
+
+.clink-btn-primary:hover {
+  background: #e07d0a;
+  color: #fff;
+}
+
+.clink-btn-secondary {
+  background: #f8f9fa;
+  color: #1a1a1a;
+  border-color: #dee2e6;
+}
+
+.clink-btn-secondary:hover {
+  background: #e9ecef;
+}
+
+.clink-status {
+  margin-top: 0.5rem;
+}
+
+.clink-status-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.clink-check-icon {
+  font-size: 2rem;
+  color: #28a745;
+  line-height: 1;
+}
+
+.clink-error-container {
+  border-color: #f5c6cb;
+  background: #fff5f5;
+}
+
+.clink-error-icon {
+  font-size: 2rem;
+  color: #dc3545;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.clink-error-msg {
+  color: #721c24;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}

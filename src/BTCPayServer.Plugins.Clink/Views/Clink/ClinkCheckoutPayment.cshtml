@@ -1,0 +1,36 @@
+@using BTCPayServer.Abstractions.Contracts
+@using BTCPayServer.Plugins.Clink.Services
+@inject ClinkService ClinkService
+@inject IScopeProvider ScopeProvider
+@{
+    var storeId = ScopeProvider.GetCurrentStoreId();
+    var settings = await ClinkService.GetSettings(storeId);
+}
+
+@if (settings is { Enabled: true, Noffer: not null })
+{
+    <div id="clink-payment-root"
+         data-noffer="@settings.Noffer"
+         data-title="@settings.Title"
+         data-description="@settings.Description"
+         data-timeout="@settings.InvoiceTimeout"
+         data-poll-interval="@settings.PollInterval"
+         data-additional-relays="@settings.AdditionalRelays">
+    </div>
+
+    <link href="~/Resources/css/clink-payment.css" asp-append-version="true" rel="stylesheet" />
+
+    <script type="importmap">
+    {
+      "imports": {
+        "@shocknet/clink-sdk": "https://cdn.jsdelivr.net/npm/@shocknet/clink-sdk@0.2.0/dist/esm/index.js",
+        "nostr-tools": "https://cdn.jsdelivr.net/npm/nostr-tools@2.10.4/lib/esm/index.js",
+        "@noble/curves": "https://cdn.jsdelivr.net/npm/@noble/curves@1.8.1/esm/index.js",
+        "@noble/hashes": "https://cdn.jsdelivr.net/npm/@noble/hashes@1.7.1/esm/index.js",
+        "@scure/base": "https://cdn.jsdelivr.net/npm/@scure/base@1.2.4/esm/index.js",
+        "@scure/bip32": "https://cdn.jsdelivr.net/npm/@scure/bip32@1.6.2/esm/index.js"
+      }
+    }
+    </script>
+    <script src="~/Resources/js/clink-payment.min.js" asp-append-version="true" type="module"></script>
+}
