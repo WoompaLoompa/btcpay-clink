@@ -1,0 +1,17 @@
+{
+  "Identifier": "BTCPayServer.Plugins.Clink",
+  "Name": "CLINK Lightning",
+  "Version": "1.0.1",
+  "Description": "Accept Bitcoin Lightning payments via the CLINK protocol over Nostr. Customers pay with ShockWallet, ZEUS, Amethyst, or any CLINK-compatible wallet.",
+  "SystemPlugin": false,
+  "Dependencies": [
+    {
+      "Identifier": "BTCPayServer",
+      "Condition": ">=2.4.0"
+    }
+  ],
+  "Source": "https://github.com/WoompaLoompa/btcpay-clink",
+  "Documentation": "https://github.com/WoompaLoompa/btcpay-clink/wiki",
+  "Author": "WoompaLoompa",
+  "AuthorLink": "https://github.com/WoompaLoompa"
+}

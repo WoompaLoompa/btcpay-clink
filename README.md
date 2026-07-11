@@ -33,7 +33,7 @@ No web server required for the Lightning node. All communication flows over Nost
 
 ### From Release
 
-1. Download the latest release `.btcpay` plugin package from the [releases page](https://github.com/your-org/btcpayserver-clink/releases)
+1. Download the latest release `.btcpay` plugin package from the [releases page](https://github.com/WoompaLoompa/btcpay-clink/releases)
 2. Go to **Server Settings > Plugins** in your BTCPay Server
 3. Upload and install the plugin
 4. Go to your store settings and click **CLINK Lightning** in the integrations nav
@@ -43,7 +43,7 @@ No web server required for the Lightning node. All communication flows over Nost
 
 ```bash
 # Clone with submodules
-git clone --recurse-submodules https://github.com/your-org/btcpayserver-clink.git
+git clone --recurse-submodules https://github.com/WoompaLoompa/btcpay-clink.git
 cd btcpayserver-clink
 
 # Or if already cloned without submodules
