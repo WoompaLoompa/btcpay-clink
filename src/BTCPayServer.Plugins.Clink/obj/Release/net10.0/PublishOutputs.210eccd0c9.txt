@@ -1,0 +1,3 @@
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/publish/plugin/BTCPayServer.Plugins.Clink.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/publish/plugin/BTCPayServer.Plugins.Clink.deps.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/publish/plugin/BTCPayServer.Plugins.Clink.pdb

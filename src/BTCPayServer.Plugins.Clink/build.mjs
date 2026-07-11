@@ -1,22 +1,24 @@
 import * as esbuild from 'esbuild';
 
-const config = {
-  entryPoints: ['Resources/js/clink-payment.js'],
-  outfile: 'Resources/js/clink-payment.min.js',
-  bundle: true,
-  minify: true,
-  sourcemap: false,
-  target: 'es2020',
-  format: 'esm',
-};
-
 const watch = process.argv.includes('--watch');
 
+const nostrBridgeConfig = {
+  entryPoints: ['nostr/clink-bridge.mjs'],
+  outfile: 'nostr/clink-bridge.bundle.mjs',
+  bundle: true,
+  minify: false,
+  sourcemap: false,
+  platform: 'node',
+  target: 'node22',
+  format: 'esm',
+  external: ['ws', 'bufferutil', 'utf-8-validate'],
+};
+
 if (watch) {
-  const ctx = await esbuild.context(config);
+  const ctx = await esbuild.context(nostrBridgeConfig);
   await ctx.watch();
-  console.log('Watching for changes...');
+  console.log('Watching bridge bundle...');
 } else {
-  await esbuild.build(config);
-  console.log('Built clink-payment.min.js');
+  await esbuild.build(nostrBridgeConfig);
+  console.log('Built clink-bridge.bundle.mjs');
 }

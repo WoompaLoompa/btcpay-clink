@@ -1,9 +1,15 @@
+using System.Threading.Tasks;
+using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Abstractions.Extensions;
 using BTCPayServer.Client;
+using BTCPayServer.Data;
+using BTCPayServer.Data.Subscriptions;
 using BTCPayServer.Plugins.Clink.Models;
 using BTCPayServer.Plugins.Clink.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BTCPayServer.Plugins.Clink.Controllers;
 
@@ -12,10 +18,98 @@ namespace BTCPayServer.Plugins.Clink.Controllers;
 public class ClinkController : Controller
 {
     private readonly ClinkService _clinkService;
+    private readonly NdebitRegistry _ndebitRegistry;
+    private readonly NostrEventStore _store;
+    private readonly ClinkNostrBridge _bridge;
+    private readonly EmailNdebitStore _emailNdebitStore;
+    private readonly ApplicationDbContext _db;
+    private readonly ILogger<ClinkController> _logger;
 
-    public ClinkController(ClinkService clinkService)
+    public ClinkController(ClinkService clinkService, NdebitRegistry ndebitRegistry, NostrEventStore store, ClinkNostrBridge bridge, EmailNdebitStore emailNdebitStore, ApplicationDbContext db, ILogger<ClinkController> logger)
     {
         _clinkService = clinkService;
+        _ndebitRegistry = ndebitRegistry;
+        _store = store;
+        _bridge = bridge;
+        _emailNdebitStore = emailNdebitStore;
+        _db = db;
+        _logger = logger;
+    }
+
+    [AllowAnonymous]
+    [HttpPost("~/clink/store-ndebit")]
+    public async Task<IActionResult> StoreNdebit([FromBody] NdebitStoreRequest request)
+    {
+        if (string.IsNullOrEmpty(request?.Ndebit))
+            return BadRequest(new { error = "ndebit is required" });
+
+        // Store ndebit by buyer email for subscription auto-pay
+        if (!string.IsNullOrEmpty(request.BuyerEmail) && !string.IsNullOrEmpty(request.StoreId))
+        {
+            await _emailNdebitStore.Set(request.StoreId, request.BuyerEmail, request.Ndebit);
+            _logger.LogInformation("StoreNdebit: stored ndebit for email {Email} in store {StoreId}",
+                request.BuyerEmail, request.StoreId);
+        }
+
+        // Auto-pay the invoice if we have an invoiceId and Bolt11
+        if (!string.IsNullOrEmpty(request.InvoiceId))
+        {
+            _ndebitRegistry.Store(request.InvoiceId, request.Ndebit);
+            var data = _store.GetByBtcpayInvoiceId(request.InvoiceId);
+            if (data != null)
+            {
+                try
+                {
+                    await _bridge.PayInvoice(request.Ndebit, data.Bolt11, data.AmountSats);
+                    _store.MarkPaidByBtcpayInvoice(request.InvoiceId);
+                    return Ok(new { status = "paid" });
+                }
+                catch (System.Exception ex)
+                {
+                    return Ok(new { status = "stored", autoPayError = ex.Message });
+                }
+            }
+        }
+
+        return Ok(new { status = "stored" });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("~/clink/ndebit-setup")]
+    public async Task<IActionResult> NdebitSetup(string portalSessionId, string storeId, string email)
+    {
+        if (!string.IsNullOrEmpty(portalSessionId))
+        {
+            var session = await _db.PortalSessions
+                .Include(s => s.Subscriber)
+                    .ThenInclude(s => s.Offering)
+                    .ThenInclude(o => o.App)
+                    .ThenInclude(a => a.StoreData)
+                .Include(s => s.Subscriber)
+                    .ThenInclude(s => s.Customer)
+                    .ThenInclude(c => c.CustomerIdentities)
+                .FirstOrDefaultAsync(s => s.Id == portalSessionId);
+
+            if (session?.Subscriber != null)
+            {
+                var store = session.GetStoreData();
+                storeId = store.Id;
+                email = session.Subscriber.Customer.Email.Get() ?? "";
+            }
+        }
+        return View("NdebitSetup", new NdebitSetupModel { StoreId = storeId, Email = email });
+    }
+
+    [AllowAnonymous]
+    [HttpGet("~/clink/check-subscription-invoice")]
+    public async Task<IActionResult> CheckSubscriptionInvoice(string invoiceId)
+    {
+        if (string.IsNullOrEmpty(invoiceId))
+            return Json(new { isSubscription = false });
+
+        var linked = await _db.Set<SubscriberInvoiceData>()
+            .AnyAsync(s => s.InvoiceId == invoiceId);
+        return Json(new { isSubscription = linked });
     }
 
     [HttpGet("configure")]
@@ -23,6 +117,7 @@ public class ClinkController : Controller
     public async Task<IActionResult> Configure(string storeId)
     {
         var settings = await _clinkService.GetSettings(storeId);
+        ViewData.SetActivePage("ClinkPlugin", "Clink", "CLINK Lightning Configuration");
         return View(settings ?? new ClinkSettings());
     }
 
@@ -33,6 +128,7 @@ public class ClinkController : Controller
         if (!string.IsNullOrEmpty(settings.Noffer) && !settings.Noffer.StartsWith("noffer1"))
         {
             TempData["ErrorMessage"] = "Invalid CLINK offer string. It must start with 'noffer1'.";
+            ViewData.SetActivePage("ClinkPlugin", "Clink", "CLINK Lightning Configuration");
             return View(settings);
         }
 
@@ -88,10 +184,4 @@ public class ClinkController : Controller
     }
 }
 
-public class PaymentNotification
-{
-    public string? InvoiceId { get; set; }
-    public string? Bolt11 { get; set; }
-    public int AmountSats { get; set; }
-    public bool Paid { get; set; }
-}
+

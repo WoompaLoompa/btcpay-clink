@@ -1,3 +1,5 @@
+using System;
+
 namespace BTCPayServer.Plugins.Clink.Models;
 
 public class ClinkPaymentData

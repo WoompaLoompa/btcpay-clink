@@ -24,7 +24,4 @@ public class ClinkSettings
 
     [Display(Name = "Additional Nostr Relays (one per line)")]
     public string? AdditionalRelays { get; set; }
-
-    [Display(Name = "Fixed BTC Rate (optional)")]
-    public decimal? FixedBtcRate { get; set; }
 }
