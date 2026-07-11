@@ -1,0 +1,9 @@
+bin/
+obj/
+node_modules/
+publish/
+*.user
+*.suo
+*.btcpay
+.vs/
+.DS_Store
