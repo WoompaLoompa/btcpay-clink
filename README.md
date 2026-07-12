@@ -130,4 +130,4 @@ btcpayserver-clink/
 
 ## License
 
-MIT
+ GPL-3.0
