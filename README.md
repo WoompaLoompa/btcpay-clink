@@ -1,6 +1,6 @@
 # BTCPay Server CLINK Plugin
 
-Accept **Bitcoin Lightning** payments on your BTCPay Server via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with [ShockWallet](https://shockwallet.app), [ZEUS](https://zeusln.com), [Amethyst](https://amethyst.social), [Electrum](https://github.com/BareBits/electrum_clink) or any CLINK-compatible Lightning wallet. All communication flows over Nostr relays.
+Accept **Bitcoin Lightning** payments on your BTCPay Server via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with [ShockWallet](https://shockwallet.app), [ZEUS](https://zeusln.com), [Amethyst](https://amethyst.social), [Electrum](https://github.com/BareBits/electrum_clink) or any CLINK-compatible Lightning wallet. Enable Lightning Auto-Renew Subscription payments. All communication flows over Nostr relays. No web server required for your Lightning node.
 
 ## How It Works
 
