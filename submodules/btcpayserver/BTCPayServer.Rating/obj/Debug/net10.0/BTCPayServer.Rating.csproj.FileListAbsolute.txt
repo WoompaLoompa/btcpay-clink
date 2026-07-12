@@ -1,0 +1,13 @@
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/bin/Debug/net10.0/BTCPayServer.Rating.deps.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/bin/Debug/net10.0/BTCPayServer.Rating.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/bin/Debug/net10.0/BTCPayServer.Rating.pdb
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.csproj.AssemblyReference.cache
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.GeneratedMSBuildEditorConfig.editorconfig
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.AssemblyInfoInputs.cache
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.AssemblyInfo.cs
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.csproj.CoreCompileInputs.cache
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.sourcelink.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/refint/BTCPayServer.Rating.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/BTCPayServer.Rating.pdb
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/submodules/btcpayserver/BTCPayServer.Rating/obj/Debug/net10.0/ref/BTCPayServer.Rating.dll
