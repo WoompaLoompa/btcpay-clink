@@ -1,12 +1,17 @@
 @using BTCPayServer.Plugins.Clink.Controllers
-@model BTCPayServer.Components.MainNav.MainNavViewModel
+@inject BTCPayServer.Abstractions.Contracts.IScopeProvider ScopeProvider
+@{
+    var storeId = ScopeProvider.GetCurrentStoreId();
+    var path = ViewContext.HttpContext.Request.Path.ToString();
+    var active = path.Contains("/clink/", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
 
-<li class="nav-item nav-item-sub">
-    <a layout-menu-item="Clink" 
+<li class="nav-item">
+    <a class="menu-item nav-link @active" id="menu-item-Clink"
        asp-controller="Clink" 
        asp-action="Configure" 
-       asp-route-storeId="@Model.Store.Id">
-        <i class="fa fa-bolt"></i>
+       asp-route-storeId="@storeId">
+        <svg role="img" class="icon icon-nav-lightning-address" width="20" height="20" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M28.9443 60.9229L47.2432 57.9229L34.252 81.1387C26.7085 74.9025 21.9005 65.4747 21.9004 54.9229C21.9004 36.1452 37.1227 20.9229 55.9004 20.9229C66.4646 20.9229 78.7758 14.9677 89.8604 5L28.9443 60.9229Z" stroke="currentColor" stroke-width="6" stroke-linejoin="round"></path><path d="M76.7607 28.0732C84.7563 34.2942 89.9004 44.0076 89.9004 54.9229C89.9003 73.7004 74.678 88.9229 55.9004 88.9229C44.7075 88.9229 31.95 94.8965 21 104.896C21 104.896 21.0182 104.869 21.0557 104.817L80.9443 48.9229L63.1797 51.9229L76.7607 28.0732Z" stroke="currentColor" stroke-width="6" stroke-linejoin="round"></path></svg>
         <span>CLINK Lightning</span>
     </a>
 </li>

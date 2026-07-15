@@ -77,20 +77,6 @@
                         <small class="form-text text-muted">Milliseconds between payment status checks (default: 5000).</small>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label asp-for="FixedBtcRate"></label>
-                        <div class="input-group">
-                            <input asp-for="FixedBtcRate" class="form-control" type="number" step="0.01" placeholder="Leave empty for live rate" />
-                            <div class="input-group-append">
-                                <span class="input-group-text">per BTC</span>
-                            </div>
-                        </div>
-                        <small class="form-text text-muted">
-                            Set a fixed BTC exchange rate in your store currency. Leave empty for live CoinGecko rate.
-                        </small>
-                    </div>
-                </div>
             </div>
 
             <div class="form-group">
@@ -169,7 +155,7 @@
     </div>
 </div>
 
-@section Scripts {
+@section PageFootContent {
     <script>
         document.getElementById('ValidateNofferBtn')?.addEventListener('click', async function() {
             const input = document.getElementById('NofferInput');

@@ -1,0 +1,31 @@
+<div class="accordion-item" id="clinkAccordionItem" style="display:none">
+    <h2 class="accordion-header" id="ClinkAccordionHeader">
+        <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ClinkAccordionContent"
+                aria-controls="ClinkAccordionContent" aria-expanded="false">
+            <span><strong>CLINK</strong> <span>via Nostr</span></span>
+            <svg role="img" class="icon icon-caret-down">
+                <use href="/img/icon-sprite.svg?v=sCZl1cHCfXovbEPq3-9ME5YXYtNRn3xiN7EciKZ4AuQ#caret-down"></use>
+            </svg>
+        </button>
+    </h2>
+    <div id="ClinkAccordionContent" class="accordion-collapse collapse" aria-labelledby="ClinkAccordionHeader"
+         data-bs-parent="#CustomNodeSupport">
+        <div class="accordion-body">
+            <ul class="mb-0">
+                <li>
+                    <code><b>type=</b>clink-noffer;<b>noffer=</b>noffer1...</code>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<script>
+setTimeout(function(){
+    var item = document.getElementById('clinkAccordionItem');
+    var accordion = document.getElementById('CustomNodeSupport');
+    if (item && accordion) {
+        accordion.appendChild(item);
+        item.style.display = '';
+    }
+}, 0);
+</script>

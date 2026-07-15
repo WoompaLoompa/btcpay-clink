@@ -1,4 +1,4 @@
-# BTCPay Server CLINK Plugin
+# BTCPay Server CLINK Plugin (v1.0.2)
 
 Accept **Bitcoin Lightning** payments on your BTCPay Server via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with [ShockWallet](https://shockwallet.app), [ZEUS](https://zeusln.com), [Amethyst](https://amethyst.social), [Electrum](https://github.com/BareBits/electrum_clink) or any CLINK-compatible Lightning wallet. Enable Lightning Auto-Renew Subscription payments. All communication flows over Nostr relays. No web server required for your Lightning node.
 
@@ -19,9 +19,9 @@ No web server required for the Lightning node. All communication flows over Nost
 - Client-side invoice generation using the CLINK SDK
 - QR code display for easy mobile payment
 - Payment polling and automatic status updates
-- Support for fixed or live (CoinGecko) BTC exchange rates
 - Configurable invoice timeout and poll interval
 - Support for additional Nostr relays
+- Lightning setup accordion integration in store settings
 
 ## Requirements
 
@@ -73,7 +73,6 @@ Navigate to your store settings and click **CLINK Lightning** in the integration
 | **Description** | Payment method description shown at checkout |
 | **Invoice Timeout** | Seconds before the Lightning invoice expires (default: 600) |
 | **Poll Interval** | Milliseconds between payment status checks (default: 5000) |
-| **Fixed BTC Rate** | Optional fixed BTC price in your store currency instead of live CoinGecko rate |
 | **Additional Relays** | Optional Nostr relays for redundancy (one per line) |
 
 ### Generating a noffer
@@ -109,10 +108,11 @@ btcpayserver-clink/
 │   │   └── ClinkPaymentData.cs      # Payment tracking model
 │   ├── Views/
 │   │   ├── Clink/
-│   │   │   ├── Configure.cshtml     # Admin configuration page
-│   │   │   ├── ClinkStoreNav.cshtml # Store nav extension
+│   │   │   ├── Configure.cshtml         # Admin configuration page
+│   │   │   ├── ClinkStoreNav.cshtml     # Store nav extension
+│   │   │   ├── LightningSetupCustom.cshtml  # Lightning setup accordion
 │   │   │   └── ClinkCheckoutPayment.cshtml  # Checkout integration
-│   │   └── _ViewImports.cshtml
+│   │   ├── _ViewImports.cshtml
 │   ├── Resources/
 │   │   ├── js/
 │   │   │   ├── clink-payment.js     # Source (ES module)

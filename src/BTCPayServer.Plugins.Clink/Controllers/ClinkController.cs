@@ -117,7 +117,7 @@ public class ClinkController : Controller
     public async Task<IActionResult> Configure(string storeId)
     {
         var settings = await _clinkService.GetSettings(storeId);
-        ViewData.SetActivePage("ClinkPlugin", "Clink", "CLINK Lightning Configuration");
+        ViewData["ActivePage"] = "Clink";
         return View(settings ?? new ClinkSettings());
     }
 
@@ -128,7 +128,7 @@ public class ClinkController : Controller
         if (!string.IsNullOrEmpty(settings.Noffer) && !settings.Noffer.StartsWith("noffer1"))
         {
             TempData["ErrorMessage"] = "Invalid CLINK offer string. It must start with 'noffer1'.";
-            ViewData.SetActivePage("ClinkPlugin", "Clink", "CLINK Lightning Configuration");
+            ViewData["ActivePage"] = "Clink";
             return View(settings);
         }
 
