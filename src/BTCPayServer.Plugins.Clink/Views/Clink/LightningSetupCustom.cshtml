@@ -1,8 +1,17 @@
+@inject BTCPayServer.Security.ContentSecurityPolicies Csp
+@{
+    var script = @"setTimeout(function(){
+var item=document.getElementById('clinkAccordionItem');
+var accordion=document.getElementById('CustomNodeSupport');
+if(item&&accordion){accordion.appendChild(item);item.style.display='';}
+},0);";
+    Csp.AllowInline(script);
+}
 <div class="accordion-item" id="clinkAccordionItem" style="display:none">
     <h2 class="accordion-header" id="ClinkAccordionHeader">
         <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ClinkAccordionContent"
                 aria-controls="ClinkAccordionContent" aria-expanded="false">
-            <span><strong>CLINK</strong> <span>via Nostr</span></span>
+            <span><strong>CLINK</strong> <span>via Nostr relays (No HTTP/HTTPS requests)</span></span>
             <svg role="img" class="icon icon-caret-down">
                 <use href="/img/icon-sprite.svg?v=sCZl1cHCfXovbEPq3-9ME5YXYtNRn3xiN7EciKZ4AuQ#caret-down"></use>
             </svg>
@@ -16,16 +25,8 @@
                     <code><b>type=</b>clink-noffer;<b>noffer=</b>noffer1...</code>
                 </li>
             </ul>
+            <p><small>Get your <code>nOffer</code> from <a href="https://my.shockwallet.app/offers" target="_blank">ShockWallet</a>, <!--a href="https://zeusln.com/" target="_blank">ZEUS</a>, <a href="https://amethyst.social/" target="_blank">Amethyst</a--> <a href="https://github.com/BareBits/electrum_clink" target="_blank">Electrum</a>, or any other <a href="https://clinkme.dev/apps.html" target="_blank">CLINK-aware wallets</a>.</small></p>
         </div>
     </div>
 </div>
-<script>
-setTimeout(function(){
-    var item = document.getElementById('clinkAccordionItem');
-    var accordion = document.getElementById('CustomNodeSupport');
-    if (item && accordion) {
-        accordion.appendChild(item);
-        item.style.display = '';
-    }
-}, 0);
-</script>
+<script>@Html.Raw(script)</script>

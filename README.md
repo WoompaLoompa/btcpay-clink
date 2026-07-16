@@ -1,12 +1,12 @@
-# BTCPay Server CLINK Plugin (v1.0.2)
+# BTCPay Server CLINK Plugin (v1.0.3)
 
 Accept **Bitcoin Lightning** payments on your BTCPay Server via the **CLINK protocol** ([clinkme.dev](https://clinkme.dev)). Customers pay with [ShockWallet](https://shockwallet.app), [ZEUS](https://zeusln.com), [Amethyst](https://amethyst.social), [Electrum](https://github.com/BareBits/electrum_clink) or any CLINK-compatible Lightning wallet. Enable Lightning Auto-Renew Subscription payments. All communication flows over Nostr relays. No web server required for your Lightning node.
 
 ## How It Works
 
-1. **Merchant** generates a CLINK Offer string (`noffer1...`) from their CLINK-compatible Lightning node
+1. **Merchant** generates a CLINK Offer string (`nOffer1...`) from their CLINK-compatible Lightning node
 2. **Customer** checks out and selects "Lightning (CLINK)" as payment method
-3. The plugin uses the `noffer` to request a BOLT11 Lightning invoice from the merchant's node over Nostr
+3. The plugin uses the `nOffer` to request a BOLT11 Lightning invoice from the merchant's node over Nostr
 4. Customer scans the QR code and pays with any Lightning wallet
 5. Payment is confirmed via CLINK protocol receipt
 
@@ -14,7 +14,7 @@ No web server required for the Lightning node. All communication flows over Nost
 
 ## Features
 
-- CLINK Offer (noffer) based Lightning payments via Nostr
+- CLINK Offer (nOffer) based Lightning payments via Nostr
 - Admin configuration page for store-level settings
 - Client-side invoice generation using the CLINK SDK
 - QR code display for easy mobile payment
@@ -68,7 +68,7 @@ Navigate to your store settings and click **CLINK Lightning** in the integration
 | Setting | Description |
 |---------|-------------|
 | **Enable/Disable** | Turn CLINK payments on/off for this store |
-| **CLINK Offer String** | Your `noffer1...` string from ShockWallet / Lightning.Pub |
+| **CLINK Offer String** | Your `nOffer1...` string from ShockWallet / Lightning.Pub |
 | **Title** | Payment method title shown at checkout |
 | **Description** | Payment method description shown at checkout |
 | **Invoice Timeout** | Seconds before the Lightning invoice expires (default: 600) |
@@ -77,9 +77,9 @@ Navigate to your store settings and click **CLINK Lightning** in the integration
 
 ### Generating a noffer
 
-#### ShockWallet (mobile)
+#### ShockWallet
 1. Open ShockWallet
-2. Go to **Receive > CLINK Offer**
+2. Go to **Menu > Linked Apps > nOffer**
 3. Copy the `noffer1...` string
 4. Paste into the plugin settings
 

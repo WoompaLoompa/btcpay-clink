@@ -12,12 +12,17 @@
         <form asp-action="Configure" asp-route-storeId="@storeId" method="post">
             <h2 class="mb-4">CLINK Lightning</h2>
             <p class="text-muted mb-4">
-                Accept Bitcoin Lightning payments via the CLINK protocol over Nostr.
-                Customers pay with
+                Accept Bitcoin Lightning payments on your BTCPay Server via the CLINK protocol (clinkme.dev) over Nostr. Get your <code>nOffer</code> string from 
+                <a href="https://shockwallet.app" target="_blank" rel="noopener noreferrer">ShockWallet</a>, 
+                <a href="https://shockwallet.app" target="_blank" rel="noopener noreferrer">ShockWallet</a> or
+                <a href="https://github.com/BareBits/electrum_clink" target="_blank" rel="noopener noreferrer">Electrum</a>. 
+                Customers pay with you with 
                 <a href="https://shockwallet.app" target="_blank" rel="noopener noreferrer">ShockWallet</a>,
                 <a href="https://zeusln.com" target="_blank" rel="noopener noreferrer">ZEUS</a>,
-                <a href="https://amethyst.social" target="_blank" rel="noopener noreferrer">Amethyst</a>,
-                or any CLINK-compatible wallet.
+                <a href="https://amethyst.social" target="_blank" rel="noopener noreferrer">Amethyst</a>
+                or any other <a href="https://clinkme.dev/apps.html" target="_blank" rel="noopener noreferrer">CLINK-aware Lightning wallets</a>. <br/>
+                Enable Lightning Auto-Renew Subscription payments. All communication flows over Nostr relays. No web server (HTTP/HTTPS) required for your future Lightning transactions, more private than ever.
+
             </p>
 
             @if (TempData["SuccessMessage"] is string successMsg)
@@ -101,33 +106,36 @@
                 <h6>Generating a CLINK Offer</h6>
                 <hr class="my-2" />
 
-                <p class="fw-semibold mb-1">ShockWallet (mobile)</p>
+                <p class="fw-semibold mb-1">ShockWallet (mobile/desktop)</p>
                 <ol class="ps-3 small">
-                    <li>Open ShockWallet</li>
-                    <li>Go to <strong>Receive &gt; CLINK Offer</strong></li>
-                    <li>Copy the <code>noffer1...</code> string</li>
+                    <li>Open <a href="https://ShockWallet.app" target="_blank">ShockWallet.app</a> in your browser or mobile app</li>
+                    <li>Go to <strong>Menu &gt; Sattic Offers</strong></li>
+                    <li>Copy the <code>nOffer1...</code> string</li>
                     <li>Paste it into the field above</li>
                 </ol>
 
-                <p class="fw-semibold mb-1 mt-3">Lightning.Pub (self-hosted)</p>
+                <p class="fw-semibold mb-1 mt-3">Lightning.Pub (self-hosted node)</p>
                 <ol class="ps-3 small">
-                    <li>Log into your Lightning.Pub dashboard</li>
+                    <li>Log into your <a href="https://Lightning.Pub" target="_blank">Lightning.Pub</a> dashboard</li>
                     <li>Navigate to <strong>Offers</strong></li>
-                    <li>Copy the generated <code>noffer1...</code> string</li>
+                    <li>Copy the generated <code>nOffer1...</code> string</li>
+                    <li>Paste it into the field above</li>
                 </ol>
 
-                <p class="fw-semibold mb-1 mt-3">ZEUS Wallet</p>
+                <p class="fw-semibold mb-1 mt-3">Electrum Wallet</p>
                 <ol class="ps-3 small">
-                    <li>Open ZEUS wallet</li>
-                    <li>Go to <strong>ZEUS Pay &gt; Manage Offer</strong></li>
-                    <li>Copy the offer string</li>
+                    <li>Open Electrum wallet</li>
+                    <li>Install <a href="https://github.com/BareBits/electrum_clink" target="_blank">CLINK/noffer plugin for electrum</a></li>
+                    <li>Go to <strong>Electrum &gt; CLINK</strong> tab</li>
+                    <li>Create and Copy the <code>nOffer...</code> string</li>
+                    <li>Paste it into the field above</li>
                 </ol>
 
                 <hr class="my-3" />
 
                 <h6>How It Works</h6>
                 <ol class="ps-3 small">
-                    <li>You generate a <code>noffer1...</code> from your CLINK wallet</li>
+                    <li>You generate a <code>nOffer1...</code> from your CLINK wallet</li>
                     <li>Customer checks out and selects "Lightning (CLINK)"</li>
                     <li>The plugin requests a BOLT11 invoice from your node over Nostr</li>
                     <li>Customer scans the QR and pays with any Lightning wallet</li>

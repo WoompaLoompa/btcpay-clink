@@ -5440,7 +5440,7 @@
     "/Users/sintetiko/.nuget/packages/": {}
   },
   "project": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "restore": {
       "projectUniqueName": "/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/BTCPayServer.Plugins.Clink.csproj",
       "projectName": "BTCPayServer.Plugins.Clink",
