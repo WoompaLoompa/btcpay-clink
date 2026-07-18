@@ -25,7 +25,9 @@ public class ClinkController : Controller
     private readonly ApplicationDbContext _db;
     private readonly ILogger<ClinkController> _logger;
 
-    public ClinkController(ClinkService clinkService, NdebitRegistry ndebitRegistry, NostrEventStore store, ClinkNostrBridge bridge, EmailNdebitStore emailNdebitStore, ApplicationDbContext db, ILogger<ClinkController> logger)
+    public ClinkController(ClinkService clinkService, NdebitRegistry ndebitRegistry, NostrEventStore store,
+        ClinkNostrBridge bridge, EmailNdebitStore emailNdebitStore, ApplicationDbContext db,
+        ILogger<ClinkController> logger)
     {
         _clinkService = clinkService;
         _ndebitRegistry = ndebitRegistry;
@@ -37,31 +39,49 @@ public class ClinkController : Controller
     }
 
     [AllowAnonymous]
-    [HttpPost("~/clink/store-ndebit")]
-    public async Task<IActionResult> StoreNdebit([FromBody] NdebitStoreRequest request)
+    [HttpPost("store-ndebit")]
+    [RequestSizeLimit(50000)]
+    public async Task<IActionResult> StoreNdebit(string storeId, [FromBody] NdebitStoreRequest request)
     {
         if (string.IsNullOrEmpty(request?.Ndebit))
             return BadRequest(new { error = "ndebit is required" });
 
-        // Store ndebit by buyer email for subscription auto-pay
-        if (!string.IsNullOrEmpty(request.BuyerEmail) && !string.IsNullOrEmpty(request.StoreId))
-        {
-            await _emailNdebitStore.Set(request.StoreId, request.BuyerEmail, request.Ndebit);
-            _logger.LogInformation("StoreNdebit: stored ndebit for email {Email} in store {StoreId}",
-                request.BuyerEmail, request.StoreId);
-        }
+        if (!request.Ndebit.StartsWith("ndebit1"))
+            return BadRequest(new { error = "Invalid ndebit format; must start with ndebit1" });
 
-        // Auto-pay the invoice if we have an invoiceId and Bolt11
+        if (request.Ndebit.Length > 5000)
+            return BadRequest(new { error = "ndebit too long (max 5000 chars)" });
+
+        if (string.IsNullOrEmpty(request.BuyerEmail))
+            return BadRequest(new { error = "BuyerEmail is required" });
+
+        // Validate that the invoice belongs to this store before storing ndebit
         if (!string.IsNullOrEmpty(request.InvoiceId))
         {
-            _ndebitRegistry.Store(request.InvoiceId, request.Ndebit);
-            var data = _store.GetByBtcpayInvoiceId(request.InvoiceId);
+            var invoice = await _db.Invoices.FindAsync(request.InvoiceId);
+            if (invoice == null || invoice.StoreDataId != storeId)
+                return NotFound(new { error = "Invoice not found for this store" });
+
+            // Rate limit: only store ndebit for unpaid invoices
+            var paid = await _clinkService.IsPaymentRecorded(storeId, request.InvoiceId);
+            if (paid)
+                return BadRequest(new { error = "Invoice is already paid" });
+        }
+
+        await _emailNdebitStore.Set(storeId, request.BuyerEmail, request.Ndebit);
+        _logger.LogInformation("StoreNdebit: stored ndebit for email {Email} in store {StoreId}",
+            request.BuyerEmail, storeId);
+
+        if (!string.IsNullOrEmpty(request.InvoiceId))
+        {
+            await _ndebitRegistry.Store(storeId, request.InvoiceId, request.Ndebit);
+            var data = await _store.GetByBtcpayInvoiceId(storeId, request.InvoiceId);
             if (data != null)
             {
                 try
                 {
                     await _bridge.PayInvoice(request.Ndebit, data.Bolt11, data.AmountSats);
-                    _store.MarkPaidByBtcpayInvoice(request.InvoiceId);
+                    await _store.MarkPaidByBtcpayInvoice(storeId, request.InvoiceId);
                     return Ok(new { status = "paid" });
                 }
                 catch (System.Exception ex)
@@ -140,6 +160,7 @@ public class ClinkController : Controller
     }
 
     [HttpGet("payment-status")]
+    [Authorize(Policy = Policies.CanViewStoreSettings)]
     public async Task<IActionResult> PaymentStatus(string storeId, string invoiceId)
     {
         var settings = await _clinkService.GetSettings(storeId);
@@ -158,17 +179,28 @@ public class ClinkController : Controller
         return Json(new
         {
             valid,
-            message = valid ? "Offer string looks valid." : "Invalid noffer format. Must start with 'noffer1' and be at least 60 characters."
+            message = valid
+                ? "Offer string looks valid."
+                : "Invalid noffer format. Must start with 'noffer1' and be at least 60 characters."
         });
     }
 
     [AllowAnonymous]
     [HttpPost("{invoiceId}/notify-payment")]
-    public async Task<IActionResult> NotifyPayment(string storeId, string invoiceId, [FromBody] PaymentNotification notification)
+    public async Task<IActionResult> NotifyPayment(string storeId, string invoiceId,
+        [FromBody] PaymentNotification notification)
     {
         var settings = await _clinkService.GetSettings(storeId);
         if (settings is not { Enabled: true })
             return NotFound();
+
+        // Verify the invoice belongs to this store before recording payment
+        if (!string.IsNullOrEmpty(invoiceId))
+        {
+            var invoice = await _db.Invoices.FindAsync(invoiceId);
+            if (invoice == null || invoice.StoreDataId != storeId)
+                return NotFound(new { error = "Invoice not found for this store" });
+        }
 
         await _clinkService.RecordPayment(storeId, invoiceId, notification);
 
@@ -183,5 +215,3 @@ public class ClinkController : Controller
         return Json(new { paid });
     }
 }
-
-

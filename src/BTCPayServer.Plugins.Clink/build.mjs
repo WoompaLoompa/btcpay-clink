@@ -1,24 +1,22 @@
-import * as esbuild from 'esbuild';
+export {}
 
-const watch = process.argv.includes('--watch');
-
-const nostrBridgeConfig = {
-  entryPoints: ['nostr/clink-bridge.mjs'],
-  outfile: 'nostr/clink-bridge.bundle.mjs',
-  bundle: true,
-  minify: false,
-  sourcemap: false,
-  platform: 'node',
-  target: 'node22',
-  format: 'esm',
-  external: ['ws', 'bufferutil', 'utf-8-validate'],
-};
-
-if (watch) {
-  const ctx = await esbuild.context(nostrBridgeConfig);
-  await ctx.watch();
-  console.log('Watching bridge bundle...');
-} else {
-  await esbuild.build(nostrBridgeConfig);
-  console.log('Built clink-bridge.bundle.mjs');
-}
+// Client-side JS bundling (if needed in the future)
+// import * as esbuild from 'esbuild';
+// const watch = process.argv.includes('--watch');
+// 
+// const config = {
+//   entryPoints: ['Resources/js/clink-payment.js'],
+//   outfile: 'Resources/js/clink-payment.min.js',
+//   bundle: true,
+//   minify: true,
+//   format: 'esm',
+//   platform: 'browser',
+//   target: 'es2022',
+// };
+// 
+// if (watch) {
+//   const ctx = await esbuild.context(config);
+//   await ctx.watch();
+// } else {
+//   await esbuild.build(config);
+// }

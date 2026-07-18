@@ -5,7 +5,7 @@
   },
   "projects": {
     "/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/BTCPayServer.Plugins.Clink.csproj": {
-      "version": "1.0.3",
+      "version": "1.0.4",
       "restore": {
         "projectUniqueName": "/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/BTCPayServer.Plugins.Clink.csproj",
         "projectName": "BTCPayServer.Plugins.Clink",
@@ -375,9 +375,6 @@
           }
         },
         "warningProperties": {
-          "noWarn": [
-            "NU1701"
-          ],
           "warnAsError": [
             "NU1605"
           ]
@@ -405,6 +402,11 @@
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[10.0.4, )"
+            },
+            "Microsoft.SourceLink.GitHub": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
@@ -894,6 +896,11 @@
             "BTCPayServer.Lightning.Common": {
               "target": "Package",
               "version": "[1.7.1, )"
+            },
+            "Microsoft.SourceLink.GitHub": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.0, )"
             },
             "NBitcoin": {
               "target": "Package",

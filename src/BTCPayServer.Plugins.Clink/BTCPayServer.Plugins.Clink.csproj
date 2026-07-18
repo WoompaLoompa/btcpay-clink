@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Product>BTCPay Server CLINK Plugin</Product>
     <Description>Accept Bitcoin Lightning payments via the CLINK protocol over Nostr. Enables subscription auto-renewals with ShockWallet, ZEUS, Amethyst, and other CLINK-compatible wallets.</Description>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -26,7 +26,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer\BTCPayServer.csproj" />
     <EmbeddedResource Include="Resources\**" />
-    <EmbeddedResource Include="nostr\clink-bridge.bundle.mjs" />
   </ItemGroup>
 
 </Project>

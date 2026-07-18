@@ -1,11 +1,9 @@
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/package-lock.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/package.json
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/BTCPayServer.Plugins.Clink.staticwebassets.endpoints.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/BTCPayServer.Plugins.Clink.deps.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/BTCPayServer.Plugins.Clink.dll
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/BTCPayServer.Plugins.Clink.pdb
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.csproj.AssemblyReference.cache
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/rpswa.dswa.cache.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.GeneratedMSBuildEditorConfig.editorconfig
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.AssemblyInfoInputs.cache
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.AssemblyInfo.cs
@@ -13,6 +11,12 @@
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.RazorAssemblyInfo.cache
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.RazorAssemblyInfo.cs
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.sourcelink.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/refint/BTCPayServer.Plugins.Clink.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.pdb
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/ref/BTCPayServer.Plugins.Clink.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Debug/net10.0/BTCPayServer.Plugins.Clink.staticwebassets.endpoints.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/rpswa.dswa.cache.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/rjimswa.dswa.cache.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/rjsmrazor.dswa.cache.json
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/rjsmcshtml.dswa.cache.json
@@ -28,7 +32,3 @@
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/staticwebassets/msbuild.buildMultiTargeting.BTCPayServer.Plugins.Clink.props
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/staticwebassets/msbuild.buildTransitive.BTCPayServer.Plugins.Clink.props
 /Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/staticwebassets.pack.json
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.dll
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/refint/BTCPayServer.Plugins.Clink.dll
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/BTCPayServer.Plugins.Clink.pdb
-/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/obj/Debug/net10.0/ref/BTCPayServer.Plugins.Clink.dll

@@ -5440,7 +5440,7 @@
     "/Users/sintetiko/.nuget/packages/": {}
   },
   "project": {
-    "version": "1.0.3",
+    "version": "1.0.4",
     "restore": {
       "projectUniqueName": "/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/BTCPayServer.Plugins.Clink.csproj",
       "projectName": "BTCPayServer.Plugins.Clink",
@@ -5778,5 +5778,17 @@
         }
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'AngleSharp' 0.17.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-pgww-w46g-26qg",
+      "libraryId": "AngleSharp",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

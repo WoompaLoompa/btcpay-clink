@@ -1,0 +1,5 @@
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Release/net10.0/publish/package-lock.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Release/net10.0/publish/package.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Release/net10.0/publish/BTCPayServer.Plugins.Clink.dll
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Release/net10.0/publish/BTCPayServer.Plugins.Clink.deps.json
+/Users/sintetiko/SCRANIO/Projetcs_DNR/ShockNet/btcpay-clink/src/BTCPayServer.Plugins.Clink/bin/Release/net10.0/publish/BTCPayServer.Plugins.Clink.pdb
