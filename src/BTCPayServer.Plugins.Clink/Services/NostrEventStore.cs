@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Plugins.Clink.Models;
 using Newtonsoft.Json;
 
@@ -6,83 +6,108 @@ namespace BTCPayServer.Plugins.Clink.Services;
 
 public class NostrEventStore
 {
-    private static readonly string FilePath = Path.Combine(
-        Path.GetDirectoryName(typeof(NostrEventStore).Assembly.Location) ?? "/tmp",
-        "clink-nostr-store.json");
+    private const string SettingKeyPrefix = "BTCPayServer.Plugins.Clink.NostrStore";
 
-    private readonly ConcurrentDictionary<string, NostrEventData> _byInvoiceId = new();
-    private readonly ConcurrentDictionary<string, string> _byEventId = new();
-    private readonly ConcurrentDictionary<string, DateTimeOffset?> _paidAt = new();
-    private readonly ConcurrentDictionary<string, string> _byBtcpayInvoiceId = new();
+    private readonly IStoreRepository _storeRepository;
 
-    public NostrEventStore()
+    public NostrEventStore(IStoreRepository storeRepository)
     {
-        LoadFromFile();
+        _storeRepository = storeRepository;
     }
 
-    public void Store(string invoiceId, NostrEventData data)
+    public async Task Store(string storeId, string invoiceId, NostrEventData data)
     {
-        _byInvoiceId[invoiceId] = data;
-        _byEventId[data.EventId] = invoiceId;
-        SaveToFile();
+        var snapshot = await LoadSnapshot(storeId);
+        snapshot.Invoices[invoiceId] = data;
+        snapshot.EventIdIndex[data.EventId] = invoiceId;
+        await SaveSnapshot(storeId, snapshot);
     }
 
-    public void LinkBtcpayInvoice(string btcpayInvoiceId, string ourInvoiceId)
+    public async Task LinkBtcpayInvoice(string storeId, string btcpayInvoiceId, string ourInvoiceId)
     {
-        _byBtcpayInvoiceId[btcpayInvoiceId] = ourInvoiceId;
-        SaveToFile();
+        var snapshot = await LoadSnapshot(storeId);
+        snapshot.BtcpayLink[btcpayInvoiceId] = ourInvoiceId;
+        await SaveSnapshot(storeId, snapshot);
     }
 
-    public string? GetOurInvoiceIdByBtcpayInvoice(string btcpayInvoiceId)
+    public async Task<string?> GetOurInvoiceIdByBtcpayInvoice(string storeId, string btcpayInvoiceId)
     {
-        return _byBtcpayInvoiceId.TryGetValue(btcpayInvoiceId, out var ourId) ? ourId : null;
+        var snapshot = await LoadSnapshot(storeId);
+        return snapshot.BtcpayLink.TryGetValue(btcpayInvoiceId, out var ourId) ? ourId : null;
     }
 
-    public NostrEventData? GetByBtcpayInvoiceId(string btcpayInvoiceId)
+    public async Task<NostrEventData?> GetByBtcpayInvoiceId(string storeId, string btcpayInvoiceId)
     {
-        var ourId = GetOurInvoiceIdByBtcpayInvoice(btcpayInvoiceId);
-        return ourId != null ? GetByInvoiceId(ourId) : null;
+        var ourId = await GetOurInvoiceIdByBtcpayInvoice(storeId, btcpayInvoiceId);
+        return ourId != null ? await GetByInvoiceId(storeId, ourId) : null;
     }
 
-    public NostrEventData? GetByInvoiceId(string invoiceId)
+    public async Task<NostrEventData?> GetByInvoiceId(string storeId, string invoiceId)
     {
-        return _byInvoiceId.TryGetValue(invoiceId, out var data) ? data : null;
+        var snapshot = await LoadSnapshot(storeId);
+        return snapshot.Invoices.TryGetValue(invoiceId, out var data) ? data : null;
     }
 
-    public string? GetInvoiceIdByEventId(string eventId)
+    public async Task<string?> GetInvoiceIdByEventId(string storeId, string eventId)
     {
-        return _byEventId.TryGetValue(eventId, out var invoiceId) ? invoiceId : null;
+        var snapshot = await LoadSnapshot(storeId);
+        return snapshot.EventIdIndex.TryGetValue(eventId, out var invoiceId) ? invoiceId : null;
     }
 
-    public void MarkPaid(string invoiceId)
+    public async Task MarkPaid(string storeId, string invoiceId)
     {
-        _paidAt[invoiceId] = DateTimeOffset.UtcNow;
-        SaveToFile();
+        var snapshot = await LoadSnapshot(storeId);
+        snapshot.PaidAt[invoiceId] = DateTimeOffset.UtcNow;
+        await SaveSnapshot(storeId, snapshot);
     }
 
-    public DateTimeOffset? GetPaidAt(string invoiceId)
+    public async Task<DateTimeOffset?> GetPaidAt(string storeId, string invoiceId)
     {
-        return _paidAt.TryGetValue(invoiceId, out var paid) ? paid : null;
+        var snapshot = await LoadSnapshot(storeId);
+        return snapshot.PaidAt.TryGetValue(invoiceId, out var paid) ? paid : null;
     }
 
-    public void MarkPaidByBtcpayInvoice(string btcpayInvoiceId)
+    public async Task MarkPaidByBtcpayInvoice(string storeId, string btcpayInvoiceId)
     {
-        var ourId = GetOurInvoiceIdByBtcpayInvoice(btcpayInvoiceId);
+        var ourId = await GetOurInvoiceIdByBtcpayInvoice(storeId, btcpayInvoiceId);
         if (ourId != null)
-            MarkPaid(ourId);
+            await MarkPaid(storeId, ourId);
     }
 
-    public void Remove(string invoiceId)
+    public async Task Remove(string storeId, string invoiceId)
     {
-        if (_byInvoiceId.TryRemove(invoiceId, out var data))
-            _byEventId.TryRemove(data.EventId, out _);
-        _paidAt.TryRemove(invoiceId, out _);
-        SaveToFile();
+        var snapshot = await LoadSnapshot(storeId);
+        if (snapshot.Invoices.Remove(invoiceId, out var data))
+            snapshot.EventIdIndex.Remove(data.EventId);
+        snapshot.PaidAt.Remove(invoiceId);
+        await SaveSnapshot(storeId, snapshot);
     }
 
-    public IEnumerable<KeyValuePair<string, NostrEventData>> GetAll()
+    public async Task<List<KeyValuePair<string, NostrEventData>>> GetAll(string storeId)
     {
-        return _byInvoiceId;
+        var snapshot = await LoadSnapshot(storeId);
+        return snapshot.Invoices.ToList();
+    }
+
+    private async Task<StoreSnapshot> LoadSnapshot(string storeId)
+    {
+        var data = await _storeRepository.GetSettingAsync<string>(storeId, SettingKeyPrefix);
+        if (string.IsNullOrEmpty(data))
+            return new StoreSnapshot();
+        try
+        {
+            return JsonConvert.DeserializeObject<StoreSnapshot>(data) ?? new StoreSnapshot();
+        }
+        catch
+        {
+            return new StoreSnapshot();
+        }
+    }
+
+    private async Task SaveSnapshot(string storeId, StoreSnapshot snapshot)
+    {
+        var json = JsonConvert.SerializeObject(snapshot);
+        await _storeRepository.UpdateSetting(storeId, SettingKeyPrefix, json);
     }
 
     private class StoreSnapshot
@@ -91,51 +116,6 @@ public class NostrEventStore
         public Dictionary<string, string> EventIdIndex { get; set; } = new();
         public Dictionary<string, DateTimeOffset?> PaidAt { get; set; } = new();
         public Dictionary<string, string> BtcpayLink { get; set; } = new();
-    }
-
-    private void SaveToFile()
-    {
-        try
-        {
-            var snapshot = new StoreSnapshot
-            {
-                Invoices = _byInvoiceId.ToDictionary(kv => kv.Key, kv => kv.Value),
-                EventIdIndex = _byEventId.ToDictionary(kv => kv.Key, kv => kv.Value),
-                PaidAt = _paidAt.ToDictionary(kv => kv.Key, kv => kv.Value),
-                BtcpayLink = _byBtcpayInvoiceId.ToDictionary(kv => kv.Key, kv => kv.Value),
-            };
-            var json = JsonConvert.SerializeObject(snapshot);
-            File.WriteAllText(FilePath, json);
-        }
-        catch
-        {
-            // Best-effort persistence
-        }
-    }
-
-    private void LoadFromFile()
-    {
-        try
-        {
-            if (!File.Exists(FilePath))
-                return;
-            var json = File.ReadAllText(FilePath);
-            var snapshot = JsonConvert.DeserializeObject<StoreSnapshot>(json);
-            if (snapshot == null)
-                return;
-            foreach (var kv in snapshot.Invoices)
-                _byInvoiceId[kv.Key] = kv.Value;
-            foreach (var kv in snapshot.EventIdIndex)
-                _byEventId[kv.Key] = kv.Value;
-            foreach (var kv in snapshot.PaidAt)
-                _paidAt[kv.Key] = kv.Value;
-            foreach (var kv in snapshot.BtcpayLink)
-                _byBtcpayInvoiceId[kv.Key] = kv.Value;
-        }
-        catch
-        {
-            // Best-effort recovery
-        }
     }
 }
 

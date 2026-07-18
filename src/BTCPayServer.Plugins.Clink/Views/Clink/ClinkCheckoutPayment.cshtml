@@ -1,21 +1,47 @@
 @using BTCPayServer.Abstractions.Contracts
 @using BTCPayServer.Plugins.Clink.Services
+@using System.Text.Json
 @inject ClinkService ClinkService
 @inject IScopeProvider ScopeProvider
 @{
     var storeId = ScopeProvider.GetCurrentStoreId();
     var settings = await ClinkService.GetSettings(storeId);
+
+    string? invoiceId = null;
+    string? amountSats = null;
+    try
+    {
+        var modelType = ViewContext.ViewData.Model?.GetType();
+        var invoiceIdProp = modelType?.GetProperty("InvoiceId");
+        if (invoiceIdProp != null)
+            invoiceId = invoiceIdProp.GetValue(ViewContext.ViewData.Model)?.ToString();
+        var priceProp = modelType?.GetProperty("Price");
+        if (priceProp != null && decimal.TryParse(priceProp.GetValue(ViewContext.ViewData.Model)?.ToString(), out var price))
+            amountSats = ((long)(price * 100_000_000)).ToString();
+    }
+    catch { }
 }
 
 @if (settings is { Enabled: true, Noffer: not null })
 {
+    var invoiceUrl = invoiceId != null
+        ? Url.Content($"~/plugins/{storeId}/clink/{invoiceId}/notify-payment")
+        : "";
+    var invoiceStatusUrl = invoiceId != null
+        ? Url.Content($"~/plugins/{storeId}/clink/{invoiceId}/status")
+        : "";
+
     <div id="clink-payment-root"
          data-noffer="@settings.Noffer"
          data-title="@settings.Title"
          data-description="@settings.Description"
          data-timeout="@settings.InvoiceTimeout"
          data-poll-interval="@settings.PollInterval"
-         data-additional-relays="@settings.AdditionalRelays">
+         data-additional-relays="@settings.AdditionalRelays"
+         data-amount-sats="@amountSats"
+         data-order-id="@invoiceId"
+         data-invoice-url="@invoiceUrl"
+         data-invoice-status-url="@invoiceStatusUrl">
     </div>
 
     <link href="~/Resources/css/clink-payment.css" asp-append-version="true" rel="stylesheet" />

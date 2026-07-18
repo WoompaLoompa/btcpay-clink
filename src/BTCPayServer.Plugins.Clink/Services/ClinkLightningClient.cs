@@ -10,8 +10,10 @@ public class ClinkLightningClient : ILightningClient
 {
     private const long MinimumSats = 10;
 
+    private readonly string _storeId;
     private readonly string _noffer;
     private readonly string? _ndebit;
+    private readonly string? _additionalRelays;
     private readonly Network _network;
     private readonly ClinkNostrBridge _bridge;
     private readonly NostrEventStore _store;
@@ -19,19 +21,22 @@ public class ClinkLightningClient : ILightningClient
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly EmailNdebitStore _emailNdebitStore;
 
-    public ClinkLightningClient(string noffer, Network network, ClinkNostrBridge bridge, NostrEventStore store,
-        string? ndebit, ILogger<ClinkLightningClient> logger,
+    public ClinkLightningClient(string storeId, string noffer, Network network, ClinkNostrBridge bridge, NostrEventStore store,
+        string? ndebit, string? additionalRelays, ILogger<ClinkLightningClient> logger,
         IServiceScopeFactory scopeFactory, EmailNdebitStore emailNdebitStore)
     {
+        _storeId = storeId;
         _noffer = noffer;
         _ndebit = ndebit;
+        _additionalRelays = additionalRelays;
         _network = network;
         _bridge = bridge;
         _store = store;
         _logger = logger;
         _scopeFactory = scopeFactory;
         _emailNdebitStore = emailNdebitStore;
-        _logger.LogInformation("ClinkLightningClient created for noffer={Noffer}, hasNdebit={HasNdebit}", noffer[..Math.Min(noffer.Length, 40)], ndebit != null);
+        _logger.LogInformation("ClinkLightningClient created for store {StoreId}, noffer={Noffer}, hasNdebit={HasNdebit}",
+            storeId, noffer[..Math.Min(noffer.Length, 40)], ndebit != null);
     }
 
     public string Noffer => _noffer;
@@ -40,24 +45,23 @@ public class ClinkLightningClient : ILightningClient
     public async Task<LightningInvoice> GetInvoice(string invoiceId, CancellationToken cancellation = default)
     {
         _logger.LogInformation("GetInvoice: id={Id}", invoiceId);
-        var data = _store.GetByInvoiceId(invoiceId);
+        var data = await _store.GetByInvoiceId(_storeId, invoiceId);
         if (data != null)
         {
-            var paidAt = _store.GetPaidAt(invoiceId);
+            var paidAt = await _store.GetPaidAt(_storeId, invoiceId);
             if (paidAt != null)
                 return BuildInvoice(data, invoiceId, paidAt.Value);
 
-            // Poll Nostr for kind 21001 payment confirmation receipt
             if (!string.IsNullOrEmpty(data.FromPub) && !string.IsNullOrEmpty(data.PrivkeyHex))
             {
                 try
                 {
                     _logger.LogInformation("GetInvoice: polling Nostr for eventId={EventId}", data.EventId);
-                    var paid = await _bridge.CheckPayment(_noffer, data.EventId, data.FromPub, data.PrivkeyHex, cancellation);
+                    var paid = await _bridge.CheckPayment(_noffer, data.EventId, data.FromPub, data.PrivkeyHex, _additionalRelays, cancellation);
                     if (paid)
                     {
                         _logger.LogInformation("GetInvoice: payment detected!");
-                        _store.MarkPaid(invoiceId);
+                        await _store.MarkPaid(_storeId, invoiceId);
                         return BuildInvoice(data, invoiceId, DateTimeOffset.UtcNow);
                     }
                 }
@@ -97,11 +101,10 @@ public class ClinkLightningClient : ILightningClient
 
         _logger.LogInformation("CreateInvoice: id={Id}, sats={Sats}, desc={Desc}", invoiceId, sats, description);
 
-        var result = await _bridge.RequestInvoice(_noffer, sats, description, expiresInSeconds, cancellation);
+        var result = await _bridge.RequestInvoice(_noffer, sats, description, expiresInSeconds, _additionalRelays, cancellation);
 
         _logger.LogInformation("CreateInvoice: got BOLT11 for invoice {Id}", invoiceId);
 
-        // Extract BTCPay invoice ID from description for later ndebit lookup
         var btcpayMatch = System.Text.RegularExpressions.Regex.Match(description, @"\(Order ID:\s*([^\s)]+)\)");
         var btcpayInvoiceId = btcpayMatch.Success ? btcpayMatch.Groups[1].Value : null;
 
@@ -115,22 +118,23 @@ public class ClinkLightningClient : ILightningClient
             FromPub = result.FromPub,
             PrivkeyHex = result.PrivkeyHex,
         };
-        _store.Store(invoiceId, storeData);
+        await _store.Store(_storeId, invoiceId, storeData);
         if (btcpayInvoiceId != null)
         {
-            _store.LinkBtcpayInvoice(btcpayInvoiceId, invoiceId);
-            _logger.LogInformation("CreateInvoice: linked BTCPay invoice {BtcpayId} -> our invoice {OurId}", btcpayInvoiceId, invoiceId);
+            await _store.LinkBtcpayInvoice(_storeId, btcpayInvoiceId, invoiceId);
+            _logger.LogInformation("CreateInvoice: linked BTCPay invoice {BtcpayId} -> our invoice {OurId}",
+                btcpayInvoiceId, invoiceId);
         }
 
-        // Auto-pay via ndebit when configured (subscription auto-renewal)
         if (!string.IsNullOrEmpty(_ndebit))
         {
             try
             {
-                _logger.LogInformation("CreateInvoice: auto-paying via ndebit for invoice {Id}", invoiceId);
-                var payResult = await _bridge.PayInvoice(_ndebit, result.Bolt11, sats, cancellation);
-                _logger.LogInformation("CreateInvoice: auto-pay OK for {Id}, preimage={Preimage}", invoiceId, payResult.Preimage ?? "(none)");
-                _store.MarkPaid(invoiceId);
+                _logger.LogInformation("CreateInvoice: auto-paying via connection string ndebit for invoice {Id}", invoiceId);
+                var payResult = await _bridge.PayInvoice(_ndebit, result.Bolt11, sats, _additionalRelays, cancellation);
+                _logger.LogInformation("CreateInvoice: auto-pay OK for {Id}, preimage={Preimage}",
+                    invoiceId, payResult.Preimage ?? "(none)");
+                await _store.MarkPaid(_storeId, invoiceId);
                 return new LightningInvoice
                 {
                     Id = invoiceId,
@@ -147,7 +151,6 @@ public class ClinkLightningClient : ILightningClient
             }
         }
 
-        // Auto-pay via customer's stored ndebit (from previous checkout, by buyerEmail)
         if (btcpayInvoiceId != null)
         {
             try
@@ -158,13 +161,15 @@ public class ClinkLightningClient : ILightningClient
                 var email = invoice?.Metadata?.BuyerEmail;
                 if (!string.IsNullOrEmpty(email) && invoice != null)
                 {
-                    var customerNdebit = await _emailNdebitStore.Get(invoice.StoreId, email);
+                    var customerNdebit = await _emailNdebitStore.Get(_storeId, email);
                     if (!string.IsNullOrEmpty(customerNdebit))
                     {
-                        _logger.LogInformation("CreateInvoice: auto-paying for {Id} via customer ndebit for email {Email}", invoiceId, email);
-                        var payResult = await _bridge.PayInvoice(customerNdebit, result.Bolt11, sats, cancellation);
-                        _logger.LogInformation("CreateInvoice: customer ndebit auto-pay OK for {Id}, preimage={Preimage}", invoiceId, payResult.Preimage ?? "(none)");
-                        _store.MarkPaid(invoiceId);
+                        _logger.LogInformation("CreateInvoice: auto-paying for {Id} via customer ndebit for email {Email}",
+                            invoiceId, email);
+                        var payResult = await _bridge.PayInvoice(customerNdebit, result.Bolt11, sats, _additionalRelays, cancellation);
+                        _logger.LogInformation("CreateInvoice: customer ndebit auto-pay OK for {Id}, preimage={Preimage}",
+                            invoiceId, payResult.Preimage ?? "(none)");
+                        await _store.MarkPaid(_storeId, invoiceId);
                         return new LightningInvoice
                         {
                             Id = invoiceId,
@@ -207,43 +212,46 @@ public class ClinkLightningClient : ILightningClient
         return invoice.BOLT11;
     }
 
-    public Task<LightningInvoice> GetInvoice(uint256 paymentHash, CancellationToken cancellation = default)
+    public async Task<LightningInvoice> GetInvoice(uint256 paymentHash, CancellationToken cancellation = default)
     {
         var hash = paymentHash.ToString();
-        var invoiceId = _store.GetInvoiceIdByEventId(hash);
+        var invoiceId = await _store.GetInvoiceIdByEventId(_storeId, hash);
         if (invoiceId != null)
         {
-            var data = _store.GetByInvoiceId(invoiceId);
+            var data = await _store.GetByInvoiceId(_storeId, invoiceId);
             if (data != null)
             {
-                var paidAt = _store.GetPaidAt(invoiceId);
-                return Task.FromResult(new LightningInvoice
+                var paidAt = await _store.GetPaidAt(_storeId, invoiceId);
+                return new LightningInvoice
                 {
                     Id = invoiceId,
                     BOLT11 = data.Bolt11,
                     Amount = LightMoney.Satoshis(data.AmountSats),
                     ExpiresAt = data.CreatedAt + data.Expiry,
                     Status = paidAt != null ? LightningInvoiceStatus.Paid : LightningInvoiceStatus.Unpaid,
-                });
+                };
             }
         }
-        return Task.FromResult(new LightningInvoice { Status = LightningInvoiceStatus.Unpaid });
+        return new LightningInvoice { Status = LightningInvoiceStatus.Unpaid };
     }
 
-    public Task<LightningInvoice[]> ListInvoices(CancellationToken cancellation = default)
+    public async Task<LightningInvoice[]> ListInvoices(CancellationToken cancellation = default)
     {
-        return Task.FromResult(_store.GetAll().Select(kv =>
+        var all = await _store.GetAll(_storeId);
+        var result = new List<LightningInvoice>();
+        foreach (var kv in all)
         {
-            var paidAt = _store.GetPaidAt(kv.Key);
-            return new LightningInvoice
+            var paidAt = await _store.GetPaidAt(_storeId, kv.Key);
+            result.Add(new LightningInvoice
             {
                 Id = kv.Key,
                 BOLT11 = kv.Value.Bolt11,
                 Amount = LightMoney.Satoshis(kv.Value.AmountSats),
                 ExpiresAt = kv.Value.CreatedAt + kv.Value.Expiry,
                 Status = paidAt != null ? LightningInvoiceStatus.Paid : LightningInvoiceStatus.Unpaid,
-            };
-        }).ToArray());
+            });
+        }
+        return result.ToArray();
     }
 
     public Task<LightningInvoice[]> ListInvoices(ListInvoicesParams request, CancellationToken cancellation = default)
@@ -251,16 +259,16 @@ public class ClinkLightningClient : ILightningClient
         return ListInvoices(cancellation);
     }
 
-    public Task<LightningPayment> GetPayment(string paymentHash, CancellationToken cancellation = default)
+    public async Task<LightningPayment> GetPayment(string paymentHash, CancellationToken cancellation = default)
     {
-        var invoiceId = _store.GetInvoiceIdByEventId(paymentHash);
+        var invoiceId = await _store.GetInvoiceIdByEventId(_storeId, paymentHash);
         if (invoiceId != null)
         {
-            var data = _store.GetByInvoiceId(invoiceId);
-            var paidAt = _store.GetPaidAt(invoiceId);
+            var data = await _store.GetByInvoiceId(_storeId, invoiceId);
+            var paidAt = await _store.GetPaidAt(_storeId, invoiceId);
             if (data != null && paidAt != null)
             {
-                return Task.FromResult(new LightningPayment
+                return new LightningPayment
                 {
                     Id = paymentHash,
                     PaymentHash = paymentHash,
@@ -268,30 +276,37 @@ public class ClinkLightningClient : ILightningClient
                     BOLT11 = data.Bolt11,
                     CreatedAt = data.CreatedAt,
                     Amount = LightMoney.Satoshis(data.AmountSats),
-                });
+                };
             }
         }
-        return Task.FromResult(new LightningPayment
+        return new LightningPayment
         {
             PaymentHash = paymentHash,
             Status = LightningPaymentStatus.Unknown,
-        });
+        };
     }
 
-    public Task<LightningPayment[]> ListPayments(CancellationToken cancellation = default)
+    public async Task<LightningPayment[]> ListPayments(CancellationToken cancellation = default)
     {
-        return Task.FromResult(_store.GetAll()
-            .Where(kv => _store.GetPaidAt(kv.Key) != null)
-            .Select(kv => new LightningPayment
+        var all = await _store.GetAll(_storeId);
+        var result = new List<LightningPayment>();
+        foreach (var kv in all)
+        {
+            var paidAt = await _store.GetPaidAt(_storeId, kv.Key);
+            if (paidAt != null)
             {
-                Id = kv.Value.EventId,
-                PaymentHash = kv.Value.EventId,
-                Status = LightningPaymentStatus.Complete,
-                BOLT11 = kv.Value.Bolt11,
-                CreatedAt = kv.Value.CreatedAt,
-                Amount = LightMoney.Satoshis(kv.Value.AmountSats),
-            })
-            .ToArray());
+                result.Add(new LightningPayment
+                {
+                    Id = kv.Value.EventId,
+                    PaymentHash = kv.Value.EventId,
+                    Status = LightningPaymentStatus.Complete,
+                    BOLT11 = kv.Value.Bolt11,
+                    CreatedAt = kv.Value.CreatedAt,
+                    Amount = LightMoney.Satoshis(kv.Value.AmountSats),
+                });
+            }
+        }
+        return result.ToArray();
     }
 
     public Task<LightningPayment[]> ListPayments(ListPaymentsParams request, CancellationToken cancellation = default)
@@ -306,12 +321,11 @@ public class ClinkLightningClient : ILightningClient
 
     public Task<LightningNodeInformation> GetInfo(CancellationToken cancellation = default)
     {
-        var info = new LightningNodeInformation
+        return Task.FromResult(new LightningNodeInformation
         {
             BlockHeight = 0,
             Alias = "CLINK nOffer Node",
-        };
-        return Task.FromResult(info);
+        });
     }
 
     public Task<LightningNodeBalance> GetBalance(CancellationToken cancellation = default)
@@ -345,19 +359,23 @@ public class ClinkLightningClient : ILightningClient
         {
             try
             {
-                _logger.LogInformation("PayCore: paying via ndebit, bolt11={Bolt11}", bolt11[..Math.Min(bolt11.Length, 60)]);
+                _logger.LogInformation("PayCore: paying via ndebit, bolt11={Bolt11}",
+                    bolt11[..Math.Min(bolt11.Length, 60)]);
 
-                var decoded = _store.GetAll().FirstOrDefault(kv => kv.Value.Bolt11 == bolt11);
+                var all = await _store.GetAll(_storeId);
+                var decoded = all.FirstOrDefault(kv => kv.Value.Bolt11 == bolt11);
                 var amountSats = decoded.Key != null ? decoded.Value.AmountSats : 0;
 
-                var result = await _bridge.PayInvoice(_ndebit, bolt11, amountSats, cancellation);
-                _logger.LogInformation("PayCore: ndebit payment OK, preimage={Preimage}", result.Preimage ?? "(none)");
+                var result = await _bridge.PayInvoice(_ndebit, bolt11, amountSats, _additionalRelays, cancellation);
 
-                if (decoded.Key != null)
+                var invoiceId = decoded.Key;
+                if (invoiceId != null)
                 {
-                    _store.MarkPaid(decoded.Key);
+                    await _store.MarkPaid(_storeId, invoiceId);
                 }
 
+                _logger.LogInformation("PayCore: ndebit payment OK, preimage={Preimage}",
+                    result.Preimage ?? "(none)");
                 return new PayResponse(PayResult.Ok);
             }
             catch (Exception ex)
@@ -367,14 +385,9 @@ public class ClinkLightningClient : ILightningClient
             }
         }
 
-        var match = _store.GetAll().FirstOrDefault(kv => kv.Value.Bolt11 == bolt11);
-        if (match.Key != null)
-        {
-            _store.MarkPaid(match.Key);
-            _logger.LogInformation("PayCore: marked invoice {Id} as paid (local, no ndebit)", match.Key);
-        }
-
-        return new PayResponse(PayResult.Ok);
+        _logger.LogWarning("PayCore: no ndebit configured, cannot pay invoice {Bolt11}",
+            bolt11[..Math.Min(bolt11.Length, 60)]);
+        return new PayResponse(PayResult.Error, "No CLINK ndebit configured for this store. Configure ndebit in the connection string to enable payouts.");
     }
 
     public Task<OpenChannelResponse> OpenChannel(OpenChannelRequest openChannelRequest,
@@ -393,10 +406,9 @@ public class ClinkLightningClient : ILightningClient
         return Task.FromResult(ConnectionResult.Ok);
     }
 
-    public Task CancelInvoice(string invoiceId, CancellationToken cancellation = default)
+    public async Task CancelInvoice(string invoiceId, CancellationToken cancellation = default)
     {
-        _store.Remove(invoiceId);
-        return Task.CompletedTask;
+        await _store.Remove(_storeId, invoiceId);
     }
 
     public Task<LightningChannel[]> ListChannels(CancellationToken cancellation = default)
@@ -433,29 +445,29 @@ public class ClinkLightningClient : ILightningClient
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellation);
             while (!linked.Token.IsCancellationRequested)
             {
-                foreach (var kv in _client._store.GetAll())
+                var all = await _client._store.GetAll(_client._storeId);
+                foreach (var kv in all)
                 {
-                    var paidAt = _client._store.GetPaidAt(kv.Key);
+                    var paidAt = await _client._store.GetPaidAt(_client._storeId, kv.Key);
                     if (paidAt != null)
                         return _client.BuildInvoice(kv.Value, kv.Key, paidAt.Value);
 
-                    // Poll Nostr for payment confirmation receipt
                     if (!string.IsNullOrEmpty(kv.Value.FromPub) && !string.IsNullOrEmpty(kv.Value.PrivkeyHex))
                     {
                         try
                         {
-                            var paid = await _client._bridge.CheckPayment(_client._noffer, kv.Value.EventId, kv.Value.FromPub, kv.Value.PrivkeyHex, linked.Token);
+                            var paid = await _client._bridge.CheckPayment(
+                                _client._noffer, kv.Value.EventId, kv.Value.FromPub, kv.Value.PrivkeyHex,
+                                _client._additionalRelays, linked.Token);
                             if (paid)
                             {
-                                _client._store.MarkPaid(kv.Key);
-                                _client._logger.LogInformation("WaitInvoice: payment detected via Nostr for eventId={EventId}", kv.Value.EventId);
+                                await _client._store.MarkPaid(_client._storeId, kv.Key);
+                                _client._logger.LogInformation("WaitInvoice: payment detected for eventId={EventId}",
+                                    kv.Value.EventId);
                                 return _client.BuildInvoice(kv.Value, kv.Key, DateTimeOffset.UtcNow);
                             }
                         }
-                        catch
-                        {
-                            // Ignore polling errors in listener
-                        }
+                        catch { }
                     }
                 }
                 try

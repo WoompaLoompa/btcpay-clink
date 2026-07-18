@@ -1,67 +1,47 @@
-using System.Collections.Concurrent;
+using BTCPayServer.Abstractions.Contracts;
 using Newtonsoft.Json;
 
 namespace BTCPayServer.Plugins.Clink.Services;
 
 public class NdebitRegistry
 {
-    private static readonly string FilePath = Path.Combine(
-        Path.GetDirectoryName(typeof(NdebitRegistry).Assembly.Location) ?? "/tmp",
-        "clink-ndebit-registry.json");
+    private const string SettingKey = "BTCPayServer.Plugins.Clink.NdebitRegistry";
 
-    private readonly ConcurrentDictionary<string, string> _byInvoiceId = new();
+    private readonly IStoreRepository _storeRepository;
 
-    public NdebitRegistry()
+    public NdebitRegistry(IStoreRepository storeRepository)
     {
-        LoadFromFile();
+        _storeRepository = storeRepository;
     }
 
-    public void Store(string btcpayInvoiceId, string ndebit)
+    public async Task Store(string storeId, string btcpayInvoiceId, string ndebit)
     {
-        _byInvoiceId[btcpayInvoiceId] = ndebit;
-        SaveToFile();
+        var data = await LoadData(storeId);
+        data[btcpayInvoiceId] = ndebit;
+        await SaveData(storeId, data);
     }
 
-    public string? GetByInvoiceId(string btcpayInvoiceId)
+    public async Task<string?> GetByInvoiceId(string storeId, string btcpayInvoiceId)
     {
-        return _byInvoiceId.TryGetValue(btcpayInvoiceId, out var ndebit) ? ndebit : null;
+        var data = await LoadData(storeId);
+        return data.TryGetValue(btcpayInvoiceId, out var ndebit) ? ndebit : null;
     }
 
-    public void Remove(string btcpayInvoiceId)
+    public async Task Remove(string storeId, string btcpayInvoiceId)
     {
-        _byInvoiceId.TryRemove(btcpayInvoiceId, out _);
-        SaveToFile();
+        var data = await LoadData(storeId);
+        if (data.Remove(btcpayInvoiceId))
+            await SaveData(storeId, data);
     }
 
-    private void SaveToFile()
+    private async Task<Dictionary<string, string>> LoadData(string storeId)
     {
-        try
-        {
-            var json = JsonConvert.SerializeObject(_byInvoiceId.ToDictionary(kv => kv.Key, kv => kv.Value));
-            File.WriteAllText(FilePath, json);
-        }
-        catch
-        {
-            // Best-effort persistence
-        }
+        return await _storeRepository.GetSettingAsync<Dictionary<string, string>>(storeId, SettingKey)
+               ?? new Dictionary<string, string>();
     }
 
-    private void LoadFromFile()
+    private async Task SaveData(string storeId, Dictionary<string, string> data)
     {
-        try
-        {
-            if (!File.Exists(FilePath))
-                return;
-            var json = File.ReadAllText(FilePath);
-            var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            if (data == null)
-                return;
-            foreach (var kv in data)
-                _byInvoiceId[kv.Key] = kv.Value;
-        }
-        catch
-        {
-            // Best-effort recovery
-        }
+        await _storeRepository.UpdateSetting(storeId, SettingKey, data);
     }
 }

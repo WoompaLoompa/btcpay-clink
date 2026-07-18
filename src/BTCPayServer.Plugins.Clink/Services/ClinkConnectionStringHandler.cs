@@ -39,9 +39,12 @@ public class ClinkConnectionStringHandler : ILightningConnectionStringHandler
         }
 
         kv.TryGetValue("ndebit", out var ndebit);
+        kv.TryGetValue("storeId", out var storeId);
+        kv.TryGetValue("relays", out var relays);
 
         error = null;
         var logger = _loggerFactory.CreateLogger<ClinkLightningClient>();
-        return new ClinkLightningClient(noffer, network, _bridge, _store, ndebit, logger, _scopeFactory, _emailNdebitStore);
+        return new ClinkLightningClient(storeId ?? "", noffer, network, _bridge, _store,
+            ndebit, relays, logger, _scopeFactory, _emailNdebitStore);
     }
 }

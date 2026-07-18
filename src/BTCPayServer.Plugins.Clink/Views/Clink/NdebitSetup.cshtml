@@ -1,0 +1,63 @@
+@model BTCPayServer.Plugins.Clink.Models.NdebitSetupModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLINK Auto-Pay Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div style="max-width: 480px; margin: 2rem auto; padding: 1.5rem; font-family: system-ui, sans-serif;">
+        <h3>CLINK Auto-Pay Setup</h3>
+        <p>Your wallet will use CLINK ndebit to automatically pay future subscription invoices.</p>
+
+        <form id="ndebit-form">
+            <label for="ndebit-input">Paste your ndebit string from your wallet:</label>
+            <br/>
+            <textarea id="ndebit-input" rows="3" style="width:100%;margin:0.5rem 0;font-family:monospace;"
+                placeholder="ndebit1..."></textarea>
+            <br/>
+            <input type="hidden" id="store-id" value="@Model.StoreId" />
+            <input type="hidden" id="email-input" value="@Model.Email" />
+            <button type="submit" style="padding:0.5rem 1.5rem;background:#f7931a;color:#fff;border:none;border-radius:6px;cursor:pointer;">
+                Enable Auto-Pay
+            </button>
+        </form>
+
+        <div id="status" style="margin-top:1rem;"></div>
+    </div>
+
+    <script>
+        document.getElementById('ndebit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ndebit = document.getElementById('ndebit-input').value.trim();
+            const storeId = document.getElementById('store-id').value;
+            const email = document.getElementById('email-input').value;
+            const status = document.getElementById('status');
+
+            if (!ndebit) {
+                status.innerHTML = '<span style="color:#dc3545;">Please enter an ndebit string.</span>';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/clink/store-ndebit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ndebit, buyerEmail: email, storeId })
+                });
+                const json = await resp.json();
+                if (resp.ok) {
+                    status.innerHTML = '<span style="color:#28a745;">Auto-pay enabled successfully! You can close this window.</span>';
+                } else {
+                    status.innerHTML = '<span style="color:#dc3545;">Error: ' + (json.error || 'Unknown') + '</span>';
+                }
+            } catch (err) {
+                status.innerHTML = '<span style="color:#dc3545;">Connection error: ' + err.message + '</span>';
+            }
+        });
+    </script>
+</body>
+</html>
