@@ -1,5 +1,0 @@
-/tmp/clink-plugin/package-lock.json
-/tmp/clink-plugin/package.json
-/tmp/clink-plugin/BTCPayServer.Plugins.Clink.dll
-/tmp/clink-plugin/BTCPayServer.Plugins.Clink.deps.json
-/tmp/clink-plugin/BTCPayServer.Plugins.Clink.pdb

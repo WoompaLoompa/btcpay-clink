@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/BTCPayServer.Plugins.Clink.props" />
-</Project>
