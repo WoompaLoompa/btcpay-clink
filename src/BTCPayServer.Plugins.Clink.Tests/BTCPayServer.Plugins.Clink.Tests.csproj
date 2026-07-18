@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <PackageReference Include="Moq" Version="4.*" />
+    <PackageReference Include="BTCPayServer.Lightning.All" Version="1.7.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BTCPayServer.Plugins.Clink\BTCPayServer.Plugins.Clink.csproj">
+      <Properties>StaticWebAssetsEnabled=false</Properties>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer.Abstractions\BTCPayServer.Abstractions.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer\BTCPayServer.csproj">
+      <Properties>StaticWebAssetsEnabled=false</Properties>
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer.Data\BTCPayServer.Data.csproj">
+      <Properties>StaticWebAssetsEnabled=false</Properties>
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer.Common\BTCPayServer.Common.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\submodules\btcpayserver\BTCPayServer.Rating\BTCPayServer.Rating.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+</Project>
