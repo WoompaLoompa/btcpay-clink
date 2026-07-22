@@ -10,6 +10,7 @@ public class NostrRelayClient : IAsyncDisposable
     private Uri? _relayUri;
     private CancellationTokenSource? _receiveCts;
     private readonly Dictionary<string, Action<JsonElement>> _subscriptions = new();
+    private TaskCompletionSource<string?>? _publishTcs;
 
     public bool IsConnected => _ws?.State == WebSocketState.Open;
 
@@ -26,9 +27,18 @@ public class NostrRelayClient : IAsyncDisposable
     public async Task PublishAsync(JsonElement eventObj, CancellationToken ct = default)
     {
         EnsureConnected();
+        var eventId = eventObj.GetProperty("id").GetString() ?? "";
+        _publishTcs = new TaskCompletionSource<string?>();
         var msg = JsonSerializer.Serialize(new object?[] { "EVENT", eventObj });
         var bytes = Encoding.UTF8.GetBytes(msg);
         await _ws!.SendAsync(bytes, WebSocketMessageType.Text, true, ct);
+
+        using var reg = ct.Register(() => _publishTcs.TrySetCanceled());
+        var okMsg = await _publishTcs.Task;
+        if (ct.IsCancellationRequested)
+            throw new OperationCanceledException();
+        if (okMsg != null)
+            throw new InvalidOperationException($"Relay rejected event: {okMsg}");
     }
 
     public async Task<string> SubscribeAsync(JsonElement filter, int timeoutSeconds,
@@ -63,6 +73,38 @@ public class NostrRelayClient : IAsyncDisposable
             _subscriptions.Remove(subId);
             _ = CloseSubscriptionAsync(subId, CancellationToken.None);
         }
+    }
+
+    public Task<string> SubscribeOneAsync(JsonElement filter, int timeoutSeconds,
+        CancellationToken ct = default)
+    {
+        EnsureConnected();
+        var subId = Guid.NewGuid().ToString("N");
+        var tcs = new TaskCompletionSource<JsonElement>();
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+        void OnEvent(JsonElement ev)
+        {
+            if (!tcs.Task.IsCompleted)
+                tcs.TrySetResult(ev);
+        }
+
+        _subscriptions[subId] = OnEvent;
+
+        var msg = JsonSerializer.Serialize(new object?[] { "REQ", subId, filter });
+        var bytes = Encoding.UTF8.GetBytes(msg);
+        _ = _ws!.SendAsync(bytes, WebSocketMessageType.Text, true, ct);
+
+        var registration = cts.Token.Register(() => tcs.TrySetCanceled());
+
+        return tcs.Task.ContinueWith(t =>
+        {
+            registration.Dispose();
+            _subscriptions.Remove(subId);
+            _ = CloseSubscriptionAsync(subId, CancellationToken.None);
+            return t.Result.ToString();
+        });
     }
 
     private async Task CloseSubscriptionAsync(string subId, CancellationToken ct)
@@ -110,6 +152,15 @@ public class NostrRelayClient : IAsyncDisposable
                 var subId = root[1].GetString();
                 if (subId != null && _subscriptions.TryGetValue(subId, out var handler))
                     handler(root[2].Clone());
+            }
+            else if (type == "OK" && root.GetArrayLength() >= 4)
+            {
+                var success = root[2].GetBoolean();
+                var message = root.GetArrayLength() > 3 ? root[3].GetString() : null;
+                if (!success && _publishTcs != null)
+                    _publishTcs.TrySetResult(message);
+                else if (success && _publishTcs != null)
+                    _publishTcs.TrySetResult(null);
             }
         }
         catch { }

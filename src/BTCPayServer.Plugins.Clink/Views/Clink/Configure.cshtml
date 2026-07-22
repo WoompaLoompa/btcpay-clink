@@ -90,6 +90,15 @@
                 <small class="form-text text-muted">Optional: additional Nostr relays for redundancy (one per line).</small>
             </div>
 
+            <div class="form-group">
+                <label asp-for="WebhookSecret"></label>
+                <input asp-for="WebhookSecret" class="form-control font-monospace" placeholder="Leave empty to disable" />
+                <small class="form-text text-muted">
+                    Secret key required in the <code>X-Webhook-Secret</code> header for payment notifications.
+                    Generate a random string and configure it in your CLINK node's webhook settings.
+                </small>
+            </div>
+
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary">Save Configuration</button>
                 <a asp-controller="UIStores" asp-action="Index" asp-route-storeId="@storeId" class="btn btn-secondary ms-2">Back to Store</a>

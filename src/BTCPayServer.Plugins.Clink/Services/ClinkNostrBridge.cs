@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
+using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.Clink.Models;
 using BTCPayServer.Plugins.Clink.Nostr;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace BTCPayServer.Plugins.Clink.Services;
 
@@ -43,7 +46,7 @@ public class ClinkNostrBridge
         return result;
     }
 
-    public async Task<bool> CheckPayment(string noffer, string eventId, string fromPub, string privkeyHex,
+    public async Task<(bool Paid, string? Preimage)> CheckPayment(string noffer, string eventId, string fromPub, string privkeyHex,
         string? additionalRelays = null, CancellationToken cancellation = default)
     {
         try
@@ -54,6 +57,23 @@ public class ClinkNostrBridge
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "CheckPayment failed");
+            return (false, null);
+        }
+    }
+
+    public bool VerifyPreimage(string preimage, string bolt11)
+    {
+        try
+        {
+            var parsed = BOLT11PaymentRequest.Parse(bolt11, Network.Main);
+            var preimageBytes = Convert.FromHexString(preimage);
+            var computedHash = SHA256.HashData(preimageBytes);
+            return computedHash.SequenceEqual(parsed.PaymentHash.ToBytes());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "VerifyPreimage: could not verify preimage for bolt11={Bolt11}",
+                bolt11[..Math.Min(bolt11.Length, 60)]);
             return false;
         }
     }

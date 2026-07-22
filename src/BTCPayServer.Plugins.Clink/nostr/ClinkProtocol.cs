@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using BTCPayServer.Plugins.Clink.Models;
 
@@ -60,11 +61,7 @@ public class ClinkProtocol
             ["sig"] = ToHex(sig),
         };
 
-        var eventElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(eventObj));
-
-        await using var relay = new NostrRelayClient();
-        await relay.ConnectAsync(relays[0], ct);
-        await relay.PublishAsync(eventElement, ct);
+        var eventElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(eventObj, IdJsonOptions));
 
         var filter = new Dictionary<string, object?>
         {
@@ -75,38 +72,58 @@ public class ClinkProtocol
         };
         var filterElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(filter));
 
-        try
+        var errors = new List<string>();
+        foreach (var (relayUrl, idx) in relays.Select((url, i) => (url, i)))
         {
-            var response = await relay.SubscribeAsync(filterElement, 60, ct);
-            using var respDoc = JsonDocument.Parse(response);
-            var respContent = respDoc.RootElement.GetProperty("content").GetString() ?? "";
-            var decrypted = Nip44.Decrypt(respContent, conversationKey);
-            var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
+            if (ct.IsCancellationRequested)
+                throw new OperationCanceledException();
 
-            if (result == null)
-                throw new InvalidOperationException("Empty response from CLINK node");
-
-            if (result.TryGetValue("bolt11", out var bolt11) && bolt11.GetString() is { Length: > 0 } bolt11Str)
+            var timeoutSeconds = idx == 0 ? 60 : 15;
+            await using var relay = new NostrRelayClient();
+            try
             {
-                return new NostrInvoiceResult
-                {
-                    Bolt11 = bolt11Str,
-                    EventId = ToHex(eventId),
-                    FromPub = pubkeyHex,
-                    PrivkeyHex = ToHex(ephemeralSk),
-                };
-            }
+                await relay.ConnectAsync(relayUrl, ct);
 
-            var error = result.TryGetValue("error", out var errEl) ? errEl.GetString() : "Unknown error";
-            throw new InvalidOperationException(error ?? "Unknown error from CLINK node");
+                var responseTask = relay.SubscribeOneAsync(filterElement, timeoutSeconds, ct);
+                await relay.PublishAsync(eventElement, ct);
+
+                var response = await responseTask;
+                using var respDoc = JsonDocument.Parse(response);
+                var respContent = respDoc.RootElement.GetProperty("content").GetString() ?? "";
+                var decrypted = Nip44.Decrypt(respContent, conversationKey);
+                var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
+
+                if (result == null)
+                    throw new InvalidOperationException("Empty response from CLINK node");
+
+                if (result.TryGetValue("bolt11", out var bolt11) && bolt11.GetString() is { Length: > 0 } bolt11Str)
+                {
+                    return new NostrInvoiceResult
+                    {
+                        Bolt11 = bolt11Str,
+                        EventId = ToHex(eventId),
+                        FromPub = pubkeyHex,
+                        PrivkeyHex = ToHex(ephemeralSk),
+                    };
+                }
+
+                var error = result.TryGetValue("error", out var errEl) ? errEl.GetString() : "Unknown error";
+                throw new InvalidOperationException(error ?? "Unknown error from CLINK node");
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (Exception ex)
+            {
+                var reason = ex is OperationCanceledException ? $"timed out ({timeoutSeconds}s)" : ex.GetType().Name;
+                errors.Add($"{relayUrl}: {reason}: {ex.Message}");
+                continue;
+            }
         }
-        catch (OperationCanceledException)
-        {
-            throw new TimeoutException("No response from CLINK node within 60 seconds");
-        }
+
+        var allFailedMsg = "Could not reach any CLINK relay:\n  " + string.Join("\n  ", errors);
+        throw new InvalidOperationException(allFailedMsg);
     }
 
-    public async Task<bool> CheckPaymentAsync(
+    public async Task<(bool Paid, string? Preimage)> CheckPaymentAsync(
         string noffer, string eventId, string fromPub, string privkeyHex,
         string? additionalRelays = null, CancellationToken ct = default)
     {
@@ -119,9 +136,6 @@ public class ClinkProtocol
         var merchantPubkeyBytes = FromHex(nofferData.Pubkey);
         var conversationKey = Nip44.GetConversationKey(privateKey, merchantPubkeyBytes);
 
-        await using var relay = new NostrRelayClient();
-        await relay.ConnectAsync(relays[0], ct);
-
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var filter = new Dictionary<string, object?>
         {
@@ -132,22 +146,28 @@ public class ClinkProtocol
         };
         var filterElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(filter));
 
-        try
+        foreach (var relayUrl in relays)
         {
-            var response = await relay.SubscribeAsync(filterElement, 30, ct);
-            using var respDoc = JsonDocument.Parse(response);
-
-            var content = respDoc.RootElement.GetProperty("content").GetString() ?? "";
-            var decrypted = Nip44.Decrypt(content, conversationKey);
-            var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
-
-            if (result != null && result.TryGetValue("res", out var res) && res.GetString() == "ok")
-                return true;
+            if (ct.IsCancellationRequested) return (false, null);
+            await using var relay = new NostrRelayClient();
+            try
+            {
+                await relay.ConnectAsync(relayUrl, ct);
+                var response = await relay.SubscribeAsync(filterElement, 15, ct);
+                using var respDoc = JsonDocument.Parse(response);
+                var content = respDoc.RootElement.GetProperty("content").GetString() ?? "";
+                var decrypted = Nip44.Decrypt(content, conversationKey);
+                var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
+                if (result != null && result.TryGetValue("res", out var res) && res.GetString() == "ok")
+                {
+                    var preimage = result.TryGetValue("preimage", out var pi) ? pi.GetString() : null;
+                    return (true, preimage);
+                }
+            }
+            catch { }
         }
-        catch (OperationCanceledException) { }
-        catch { }
 
-        return false;
+        return (false, null);
     }
 
     public async Task<NostrPayResult> PayInvoiceAsync(
@@ -170,6 +190,7 @@ public class ClinkProtocol
             ["bolt11"] = bolt11,
             ["amount_sats"] = amountSats,
             ["action"] = "pay",
+            ["ndebit"] = ndebit,
         };
         var plaintext = JsonSerializer.Serialize(data);
         var encryptedContent = Nip44.Encrypt(plaintext, conversationKey);
@@ -181,10 +202,9 @@ public class ClinkProtocol
         {
             new object[] { "p", ndebitData.Pubkey },
             new object[] { "clink_version", "1" },
-            new object[] { "ndebit", ndebit },
         };
 
-        var serialized = SerializeEventForId(pubkeyHex, createdAt, 21001, tags, encryptedContent);
+        var serialized = SerializeEventForId(pubkeyHex, createdAt, 21002, tags, encryptedContent);
         var eventId = SHA256.HashData(Encoding.UTF8.GetBytes(serialized));
 
         var sig = SignSchnorr(ephemeralSk, eventId);
@@ -194,7 +214,7 @@ public class ClinkProtocol
             ["id"] = ToHex(eventId),
             ["pubkey"] = pubkeyHex,
             ["created_at"] = createdAt,
-            ["kind"] = 21001,
+            ["kind"] = 21002,
             ["tags"] = tags,
             ["content"] = encryptedContent,
             ["sig"] = ToHex(sig),
@@ -202,48 +222,69 @@ public class ClinkProtocol
 
         var eventElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(eventObj));
 
-        await using var relay = new NostrRelayClient();
-        await relay.ConnectAsync(relays[0], ct);
-        await relay.PublishAsync(eventElement, ct);
-
         var filter = new Dictionary<string, object?>
         {
             ["since"] = createdAt - 1,
-            ["kinds"] = new[] { 21001 },
+            ["kinds"] = new[] { 21002 },
             ["#p"] = new[] { pubkeyHex },
             ["#e"] = new[] { ToHex(eventId) },
         };
         var filterElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(filter));
 
-        try
+        var errors = new List<string>();
+        foreach (var (relayUrl, idx) in relays.Select((url, i) => (url, i)))
         {
-            var response = await relay.SubscribeAsync(filterElement, 45, ct);
-            using var respDoc = JsonDocument.Parse(response);
+            if (ct.IsCancellationRequested)
+                throw new OperationCanceledException();
 
-            var respContent = respDoc.RootElement.GetProperty("content").GetString() ?? "";
-            var decrypted = Nip44.Decrypt(respContent, conversationKey);
-            var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
-
-            if (result == null)
-                throw new InvalidOperationException("Empty pay response");
-
-            if (result.TryGetValue("res", out var res) && res.GetString() == "ok")
+            var timeoutSeconds = idx == 0 ? 45 : 15;
+            await using var relay = new NostrRelayClient();
+            try
             {
-                return new NostrPayResult
-                {
-                    Res = "ok",
-                    Preimage = result.TryGetValue("preimage", out var pi) ? pi.GetString() : null,
-                };
-            }
+                await relay.ConnectAsync(relayUrl, ct);
 
-            var error = result.TryGetValue("error", out var errEl) ? errEl.GetString() : "Payment failed";
-            throw new InvalidOperationException(error ?? "Payment failed");
+                var responseTask = relay.SubscribeOneAsync(filterElement, timeoutSeconds, ct);
+                await relay.PublishAsync(eventElement, ct);
+
+                var response = await responseTask;
+                using var respDoc = JsonDocument.Parse(response);
+
+                var respContent = respDoc.RootElement.GetProperty("content").GetString() ?? "";
+                var decrypted = Nip44.Decrypt(respContent, conversationKey);
+                var result = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(decrypted);
+
+                if (result == null)
+                    throw new InvalidOperationException("Empty pay response");
+
+                if (result.TryGetValue("res", out var res) && res.GetString() == "ok")
+                {
+                    return new NostrPayResult
+                    {
+                        Res = "ok",
+                        Preimage = result.TryGetValue("preimage", out var pi) ? pi.GetString() : null,
+                    };
+                }
+
+                var error = result.TryGetValue("error", out var errEl) ? errEl.GetString() : "Payment failed";
+                throw new InvalidOperationException(error ?? "Payment failed");
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (Exception ex)
+            {
+                var reason = ex is OperationCanceledException ? $"timed out ({timeoutSeconds}s)" : ex.GetType().Name;
+                errors.Add($"{relayUrl}: {reason}: {ex.Message}");
+                continue;
+            }
         }
-        catch (OperationCanceledException)
-        {
-            throw new TimeoutException("No response from CLINK node within 45 seconds");
-        }
+
+        var allFailedMsg = "Could not reach any CLINK relay:\n  " + string.Join("\n  ", errors);
+        throw new InvalidOperationException(allFailedMsg);
     }
+
+    private static readonly JsonSerializerOptions IdJsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     private static string SerializeEventForId(string pubkey, long createdAt, int kind, object tags, string content)
     {
@@ -255,7 +296,7 @@ public class ClinkProtocol
             kind,
             tags,
             content,
-        });
+        }, IdJsonOptions);
     }
 
     private static byte[] GetPublicKey(byte[] privateKey)

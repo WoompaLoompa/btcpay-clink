@@ -1,0 +1,130 @@
+**BTCPay Server CLINK Plugin - Installation & Setup Tutorial**
+
+---
+
+**[INTRO]**
+
+Hey, in this video I'll show you how to install and configure the CLINK Lightning plugin for BTCPay Server. With this plugin, you can accept Lightning payments over Nostr - no web server needed for your Lightning node. Customers can pay with ShockWallet, ZEUS, Amethyst, Electrum or any CLINK-aware wallet.
+
+---
+
+**[PREREQUISITES]**
+
+Before we start, make sure you have:
+- A running BTCPay Server instance, version 2.4.0 or later
+- Admin access to your BTCpay server
+- A CLINK-compatible wallet like ShockWallet
+
+---
+
+**[STEP 1 - INSTALL THE PLUGIN]**
+
+Log into your BTCPay Server as admin.
+
+Go to **Server Settings** → **Plugins**.
+
+Click **Show Info** to enable pre-release plugins if the CLINK plugin isn't visible yet.
+
+Search for **CLINK** and click **Install**.
+
+Restart your BTCPay Server when prompted.
+
+---
+
+**[STEP 2 - GET YOUR CLINK OFFER]**
+
+Open ShockWallet on your phone or desktop.
+
+Go to **Menu** → **Linked Apps**.
+
+Copy the `noffer1...` string. This is your unique CLINK offer that connects your Lightning node to the plugin.
+
+---
+
+**[STEP 3 - CONFIGURE LIGHTNING NODE]**
+
+Back in BTCPay Server, go to your **Lightning Node Settings**.
+
+Set the node type `type=clink-noffer;` and paste the `noffer1...` string
+
+Save settings and yoru BTCpay server should be now connected to your Lightning.pub node
+
+
+---
+
+**[STEP 4 - CONFIGURE THE PLUGIN]**
+
+in BTCPay Server, go to your **Store Settings**.
+
+Click **CLINK Lightning** in the left sidebar under Integrations.
+
+Toggle **Enable CLINK Lightning payments** to on.
+
+Paste your `noffer1...` string into the **CLINK Offer String** field.
+
+Set a title - this is what customers see at checkout. Default is "Lightning (CLINK)".
+
+Optionally add a description.
+
+Set the **Invoice Timeout** - how long the Lightning invoice stays valid. Default is 600 seconds, that's 10 minutes.
+
+Set the **Poll Interval** - how often the plugin checks for payment confirmation. Default is 5000 milliseconds.
+
+If you want a fixed BTC exchange rate instead of live CoinGecko rates, enter it here. Otherwise leave it empty.
+
+If you want extra relay redundancy, add additional Nostr relays here, one per line.
+
+Click **Save Configuration**.
+
+---
+
+**[STEP 5 - TEST A PAYMENT]**
+
+Create a test invoice in BTCPay Server.
+
+At checkout, you should now see **Lightning (CLINK)** as a payment option.
+
+Select it. The plugin generates a BOLT11 invoice and displays it as a QR code.
+
+Open ShockWallet on your phone. Scan the QR code and pay.
+
+The payment should confirm automatically within a few seconds.
+
+---
+
+**[STEP 6 - SUBSCRIPTIONS (OPTIONAL)]**
+
+If you want to enable subscription auto-pay:
+
+During checkout, the customer will be prompted to enter a **nDebit** string from their wallet.
+
+This authorizes automatic future payments. The plugin can then deduct sats directly from the authorized wallet on renewal.
+
+ShockWallet supports nDebit. Other wallets are adding support.
+
+---
+
+**[OUTRO]**
+
+That's it! You're now accepting Lightning payments over Nostr with BTCPay Server. No web server, no additional infrastructure - just Nostr relays.
+
+Links to the code, docs, and plugin builder are in the description below.
+
+If this was helpful, stack some sats on the Stacker.news post and drop a comment if you have questions.
+
+Thanks for watching.
+
+---
+
+**[DESCRIPTION BOX]**
+
+```
+BTCPay Server CLINK Plugin
+
+Install: https://plugin-builder.btcpayserver.org/public/plugins/clink
+Code: https://github.com/WoompaLoompa/btcpay-clink
+Docs: https://github.com/WoompaLoompa/btcpay-clink/wiki
+Thread: https://stacker.news/items/1523268/r/06bc1a977d
+
+#btcpayserver #lightning #nostr #clink #bitcoin
+```

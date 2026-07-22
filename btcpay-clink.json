@@ -1,7 +1,7 @@
 {
   "Identifier": "BTCPayServer.Plugins.Clink",
   "Name": "CLINK Lightning",
-  "Version": "1.0.4",
+  "Version": "1.0.5",
   "Description": "Accept Bitcoin Lightning payments via the CLINK protocol over Nostr. No Node.js required. Subscription auto-renewals supported via client-side ndebit flow.",
   "SystemPlugin": false,
   "Dependencies": [

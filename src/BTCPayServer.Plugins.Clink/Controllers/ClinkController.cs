@@ -80,7 +80,17 @@ public class ClinkController : Controller
             {
                 try
                 {
-                    await _bridge.PayInvoice(request.Ndebit, data.Bolt11, data.AmountSats);
+                    var payResult = await _bridge.PayInvoice(request.Ndebit, data.Bolt11, data.AmountSats);
+                    if (string.IsNullOrEmpty(payResult.Preimage))
+                    {
+                        _logger.LogError("StoreNdebit: no preimage received for invoice {InvoiceId}", request.InvoiceId);
+                        return Ok(new { status = "stored", error = "Payment completed but no preimage received" });
+                    }
+                    if (!_bridge.VerifyPreimage(payResult.Preimage, data.Bolt11))
+                    {
+                        _logger.LogError("StoreNdebit: preimage verification failed for invoice {InvoiceId}", request.InvoiceId);
+                        return Ok(new { status = "stored", error = "Preimage verification failed" });
+                    }
                     await _store.MarkPaidByBtcpayInvoice(storeId, request.InvoiceId);
                     return Ok(new { status = "paid" });
                 }
@@ -193,6 +203,14 @@ public class ClinkController : Controller
         var settings = await _clinkService.GetSettings(storeId);
         if (settings is not { Enabled: true })
             return NotFound();
+
+        // Require webhook secret for authentication
+        if (!string.IsNullOrEmpty(settings.WebhookSecret))
+        {
+            var providedSecret = HttpContext.Request.Headers["X-Webhook-Secret"].FirstOrDefault();
+            if (providedSecret != settings.WebhookSecret)
+                return Unauthorized(new { error = "Invalid or missing X-Webhook-Secret header" });
+        }
 
         // Verify the invoice belongs to this store before recording payment
         if (!string.IsNullOrEmpty(invoiceId))

@@ -24,4 +24,7 @@ public class ClinkSettings
 
     [Display(Name = "Additional Nostr Relays (one per line)")]
     public string? AdditionalRelays { get; set; }
+
+    [Display(Name = "Webhook Secret (optional)")]
+    public string? WebhookSecret { get; set; }
 }

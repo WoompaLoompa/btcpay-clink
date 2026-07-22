@@ -35,4 +35,14 @@ public class Bech32DecoderTests
     {
         Assert.Throws<FormatException>(() => ClinkBech32.DecodeNdebit("noffer1qyz3unz"));
     }
+
+    [Fact]
+    public void DecodeLongNoffer()
+    {
+        var noffer = "noffer1qvqsyqjqvcexxdph89nrse3nvs6k2d35893xze3hxfnxgwpjvf3rxvf4vyunve3j8y6rqdpkx56nzc3k8pjnwcfkx33rydenxajrjdfjv9snqdgprfmhxue69uhhxarjvee8jtnndphkx6ewdejhgam0wf4sqgrka4zlqr820wk9nkxsklfqfpy02vva0wtvzs8lkm7t424s5y75fc6vyk7n";
+        var result = ClinkBech32.DecodeNoffer(noffer);
+        Assert.Equal("76ed45f00cea7bac59d8d0b7d204848f5319d7b96c140ffb6fcbaaab0a13d44e", result.Pubkey);
+        Assert.Equal("wss://strfry.shock.network", result.Relay);
+        Assert.Contains("f2c479f8f3d5e649baf72fd82bb315a96f294046551b68e7a64b2737d952aa05", result.Offer);
+    }
 }

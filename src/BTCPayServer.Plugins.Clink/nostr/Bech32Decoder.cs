@@ -137,21 +137,24 @@ public static class ClinkBech32
         var pos = 0;
         while (pos < data.Length)
         {
-            if (pos + 3 > data.Length) break;
+            if (pos + 2 > data.Length) break;
             var tag = data[pos++];
-            var len = (data[pos] << 8) | data[pos + 1];
-            pos += 2;
+            var len = data[pos++];
             if (pos + len > data.Length) break;
-
-            var value = Encoding.UTF8.GetString(data, pos, len);
-            pos += len;
 
             switch (tag)
             {
-                case 0: result.Relay = value; break;
-                case 1: result.Pubkey = value; break;
-                case 2: result.Offer = value; break;
+                case 0:
+                    result.Pubkey = Convert.ToHexString(data, pos, len).ToLowerInvariant();
+                    break;
+                case 1:
+                    result.Relay = Encoding.UTF8.GetString(data, pos, len);
+                    break;
+                case 2:
+                    result.Offer = Encoding.UTF8.GetString(data, pos, len);
+                    break;
             }
+            pos += len;
         }
         return result;
     }
@@ -162,10 +165,9 @@ public static class ClinkBech32
         var pos = 0;
         while (pos < data.Length)
         {
-            if (pos + 3 > data.Length) break;
+            if (pos + 2 > data.Length) break;
             var tag = data[pos++];
-            var len = (data[pos] << 8) | data[pos + 1];
-            pos += 2;
+            var len = data[pos++];
             if (pos + len > data.Length) break;
 
             var value = Encoding.UTF8.GetString(data, pos, len);

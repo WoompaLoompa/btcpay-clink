@@ -39,7 +39,7 @@ public static class Secp256k1Point
     public static byte[] DeriveConversationKey(ReadOnlySpan<byte> privateKey, ReadOnlySpan<byte> publicKeyXOnly)
     {
         var sharedX = ComputeSharedX(privateKey, publicKeyXOnly);
-        return HMACSHA256.HashData("nip44-v2"u8, sharedX);
+        return HKDF.Extract(HashAlgorithmName.SHA256, sharedX, Encoding.UTF8.GetBytes("nip44-v2"));
     }
 
     public static byte[] GetPublicKeyXOnly(ReadOnlySpan<byte> privateKey32)

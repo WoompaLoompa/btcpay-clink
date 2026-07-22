@@ -7,3 +7,4 @@ publish/
 *.btcpay
 .vs/
 .DS_Store
+media/
