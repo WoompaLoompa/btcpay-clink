@@ -138,38 +138,6 @@ public class ClinkLightningClient : ILightningClient
                 btcpayInvoiceId, invoiceId);
         }
 
-        if (!string.IsNullOrEmpty(_ndebit))
-        {
-            try
-            {
-                _logger.LogInformation("CreateInvoice: auto-paying via connection string ndebit for invoice {Id}", invoiceId);
-                var payResult = await _bridge.PayInvoice(_ndebit, result.Bolt11, sats, _additionalRelays, cancellation);
-                _logger.LogInformation("CreateInvoice: auto-pay got response for {Id}, preimage={Preimage}",
-                    invoiceId, payResult.Preimage ?? "(none)");
-
-                if (!string.IsNullOrEmpty(payResult.Preimage) && VerifyPreimage(payResult.Preimage, result.Bolt11))
-                {
-                    _logger.LogInformation("CreateInvoice: preimage verified, marking paid for {Id}", invoiceId);
-                    await _store.MarkPaid(storeId, invoiceId);
-                    return new LightningInvoice
-                    {
-                        Id = invoiceId,
-                        BOLT11 = result.Bolt11,
-                        Amount = amount,
-                        ExpiresAt = DateTimeOffset.UtcNow + expiry,
-                        PaidAt = DateTimeOffset.UtcNow,
-                        Status = LightningInvoiceStatus.Paid,
-                    };
-                }
-
-                _logger.LogWarning("CreateInvoice: auto-pay preimage missing or invalid for {Id}", invoiceId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CreateInvoice: auto-pay via connection string ndebit failed for invoice {Id}", invoiceId);
-            }
-        }
-
         if (btcpayInvoiceId != null)
         {
             try
@@ -385,25 +353,9 @@ public class ClinkLightningClient : ILightningClient
         _logger.LogInformation("GetValidatedStoreIdAsync: _storeId=[{StoreId}] _noffer=[{Noffer}]", _storeId, _noffer[..Math.Min(_noffer.Length, 40)]);
         if (!string.IsNullOrEmpty(_storeId))
             return _storeId;
-        using var scope = _scopeFactory.CreateScope();
-        var clinkService = scope.ServiceProvider.GetRequiredService<ClinkService>();
-        var db = scope.ServiceProvider.GetRequiredService<BTCPayServer.Data.ApplicationDbContext>();
-        var stores = await db.Stores.ToListAsync();
-        _logger.LogInformation("GetValidatedStoreIdAsync: scanning {Count} stores", stores.Count);
-        foreach (var store in stores)
-        {
-            var settings = await clinkService.GetSettings(store.Id);
-            _logger.LogInformation("GetValidatedStoreIdAsync: store={Id} settings.Noffer=[{Noffer}]", store.Id, settings?.Noffer?[..Math.Min(settings.Noffer.Length, 60)]);
-            if (settings?.Noffer == _noffer)
-            {
-                _logger.LogInformation("GetValidatedStoreIdAsync: exact match for store {Id}", store.Id);
-                _storeId = store.Id;
-                _additionalRelays = settings.AdditionalRelays ?? _additionalRelays;
-                return _storeId;
-            }
-        }
-        _logger.LogError("GetValidatedStoreIdAsync: no store found with matching noffer=[{Noffer}]", _noffer[..Math.Min(_noffer.Length, 40)]);
-        throw new InvalidOperationException("Could not resolve store for the configured noffer — no store has a matching CLINK offer");
+
+        throw new InvalidOperationException(
+            "StoreId is required for CLINK operations. Configure storeId in your connection string or ensure the store context is authenticated.");
     }
 
     private async Task<PayResponse> PayCore(string bolt11, CancellationToken cancellation = default)
@@ -499,7 +451,7 @@ public class ClinkLightningClient : ILightningClient
             var parsed = BOLT11PaymentRequest.Parse(bolt11, _network);
             var preimageBytes = Convert.FromHexString(preimage);
             var computedHash = SHA256.HashData(preimageBytes);
-            return computedHash.SequenceEqual(parsed.PaymentHash.ToBytes());
+            return computedHash.SequenceEqual(parsed.PaymentHash.ToBytes(false));
         }
         catch (Exception ex)
         {

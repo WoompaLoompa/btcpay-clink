@@ -83,9 +83,9 @@ public class NofferData
 
 public class NdebitData
 {
-    public string Relay { get; set; } = "";
     public string Pubkey { get; set; } = "";
-    public string InvoiceId { get; set; } = "";
+    public string Relay { get; set; } = "";
+    public string? Pointer { get; set; }
 }
 
 public static class ClinkBech32
@@ -170,14 +170,21 @@ public static class ClinkBech32
             var len = data[pos++];
             if (pos + len > data.Length) break;
 
-            var value = Encoding.UTF8.GetString(data, pos, len);
+            var value = data.AsSpan(pos, len).ToArray();
             pos += len;
 
             switch (tag)
             {
-                case 0: result.Relay = value; break;
-                case 1: result.Pubkey = value; break;
-                case 3: result.InvoiceId = value; break;
+                case 0:
+                    if (value.Length == 32)
+                        result.Pubkey = Convert.ToHexString(value).ToLowerInvariant();
+                    break;
+                case 1:
+                    result.Relay = Encoding.UTF8.GetString(value);
+                    break;
+                case 2:
+                    result.Pointer = Encoding.UTF8.GetString(value);
+                    break;
             }
         }
         return result;

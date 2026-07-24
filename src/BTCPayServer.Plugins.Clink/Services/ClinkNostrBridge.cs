@@ -68,7 +68,7 @@ public class ClinkNostrBridge
             var parsed = BOLT11PaymentRequest.Parse(bolt11, Network.Main);
             var preimageBytes = Convert.FromHexString(preimage);
             var computedHash = SHA256.HashData(preimageBytes);
-            return computedHash.SequenceEqual(parsed.PaymentHash.ToBytes());
+            return computedHash.SequenceEqual(parsed.PaymentHash.ToBytes(false));
         }
         catch (Exception ex)
         {

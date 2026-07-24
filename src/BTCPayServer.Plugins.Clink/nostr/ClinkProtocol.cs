@@ -189,9 +189,11 @@ public class ClinkProtocol
         {
             ["bolt11"] = bolt11,
             ["amount_sats"] = amountSats,
-            ["action"] = "pay",
-            ["ndebit"] = ndebit,
         };
+        if (!string.IsNullOrEmpty(ndebitData.Pointer))
+        {
+            data["pointer"] = ndebitData.Pointer;
+        }
         var plaintext = JsonSerializer.Serialize(data);
         var encryptedContent = Nip44.Encrypt(plaintext, conversationKey);
 

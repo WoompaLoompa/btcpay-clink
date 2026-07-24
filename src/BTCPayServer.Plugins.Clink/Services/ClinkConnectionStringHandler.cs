@@ -40,10 +40,17 @@ public class ClinkConnectionStringHandler : ILightningConnectionStringHandler
 
         kv.TryGetValue("ndebit", out var ndebit);
         kv.TryGetValue("relays", out var relays);
+        kv.TryGetValue("storeId", out var storeId);
+
+        if (string.IsNullOrEmpty(storeId))
+        {
+            error = "The key 'storeId' is mandatory for clink-noffer connection strings";
+            return null;
+        }
 
         error = null;
         var logger = _loggerFactory.CreateLogger<ClinkLightningClient>();
-        return new ClinkLightningClient("", noffer, network, _bridge, _store,
+        return new ClinkLightningClient(storeId, noffer, network, _bridge, _store,
             ndebit, relays, logger, _scopeFactory, _emailNdebitStore);
     }
 }

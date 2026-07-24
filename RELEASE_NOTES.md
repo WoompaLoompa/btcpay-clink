@@ -1,3 +1,30 @@
+## v1.0.6
+
+### What's Changed
+
+- **nDebit TLV decoding corrected** — Swapped TLV tags to match CLINK SDK: Tag 0=pubkey (32-byte hex), Tag 1=relay (UTF-8), Tag 2=pointer (UTF-8). Added `NdebitData.Pointer` field (replaces `InvoiceId`). Removed wrong Tag 3=InvoiceId.
+- **Payment payload matches SDK** — `ClinkProtocol` now sends `pointer` field from nDebit TLV (not full `ndebit` credential). Removed `action` and `ndebit` fields from payload.
+- **Connection-string auto-pay removed** — `CreateInvoice` no longer unconditionally pays incoming invoices with merchant's own nDebit. nDebit is only used via `PayCore` when merchant explicitly pays.
+- **PaymentHash.ToBytes(false)** — Changed to big-endian (`ToBytes(false)`) in `VerifyPreimage` for proper SHA256 comparison matching CLINK SDK.
+- **Store resolution hardened** — `GetValidatedStoreIdAsync` now throws on empty `storeId` instead of DB-searching by noffer (which could mix stores sharing the same noffer).
+- **Integration tests added** — 3 new tests: nDebit TLV tag mapping, payment payload format, preimage endianness.
+
+### Fixes
+
+- **BTCPay Server review issues (v1.0.5 rejection)** — All 6 issues addressed:
+  1. PaymentHash little-endian → `ToBytes(false)`
+  2. nDebit TLV 0/1 swapped, pointer/k1 handled
+  3. Connection-string ndebit unconditional → removed
+  4. Store resolution first-match → requires storeId
+  5. Payment payload sends credential → now sends pointer only
+  6. Missing integration tests → added NdebitIntegrationTests
+
+### Download
+
+Download the `BTCPayServer.Plugins.Clink-1.0.6.btcpay` file from [plugin source code](https://github.com/WoompaLoompa/btcpay-clink/releases/) or from the official [BTCpayServer plugin repository](https://plugin-builder.btcpayserver.org/public/plugins/clink) and upload it in your instance via **Server Settings > Plugins**.
+
+---
+
 ## v1.0.5
 
 ### What's Changed
